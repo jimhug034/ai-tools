@@ -1,0 +1,10 @@
+{
+  "buildCommand": "pnpm --filter @ai-tools/youtube-transcript build",
+  "devCommand": "pnpm --filter @ai-tools/youtube-transcript dev",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "regions": ["sin1"],
+  "env": {
+    "GROQ_API_KEY": "@groq-api-key"
+  }
+}
