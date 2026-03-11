@@ -1,0 +1,20 @@
+{
+  "name": "@ai-tools/api-clients",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "lint": "eslint src/",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "youtube-transcript": "^1.2.0",
+    "groq-sdk": "^0.7.0"
+  },
+  "devDependencies": {
+    "@types/youtube-transcript": "^1.0.0",
+    "vitest": "^2.0.0",
+    "@ai-tools/config": "workspace:*"
+  }
+}
