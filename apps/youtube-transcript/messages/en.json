@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "title": "YouTube Transcript Tool",
+    "description": "Get instant, accurate transcripts from any YouTube video with AI-powered summaries and translations."
+  },
+  "header": {
+    "title": "YouTube Transcript Tool",
+    "languageSwitch": "Language"
+  },
+  "input": {
+    "placeholder": "Enter YouTube video URL",
+    "button": "Get Transcript",
+    "validating": "Validating URL...",
+    "invalid": "Please enter a valid YouTube URL"
+  },
+  "transcript": {
+    "title": "Transcript",
+    "loading": "Fetching transcript, please wait...",
+    "noSubtitles": "No subtitles available for this video",
+    "error": "Failed to fetch transcript",
+    "copy": "Copy",
+    "export": "Export"
+  },
+  "summary": {
+    "title": "AI Summary",
+    "button": "Generate Summary",
+    "loading": "Generating summary...",
+    "error": "Failed to generate summary",
+    "copy": "Copy"
+  },
+  "translation": {
+    "title": "Translation",
+    "button": "Translate",
+    "loading": "Translating...",
+    "error": "Failed to translate",
+    "copy": "Copy",
+    "languages": {
+      "en": "English",
+      "zh": "Chinese",
+      "es": "Spanish",
+      "fr": "French",
+      "de": "German",
+      "ja": "Japanese",
+      "ko": "Korean"
+    }
+  },
+  "export": {
+    "txt": "Export as TXT",
+    "srt": "Export as SRT",
+    "success": "Exported successfully",
+    "copy": "Copy"
+  }
+}

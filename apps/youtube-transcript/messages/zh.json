@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "title": "YouTube 视频转录工具",
+    "description": "即时生成准确的视频转录，AI 驱动的智能摘要和翻译。"
+  },
+  "header": {
+    "title": "YouTube 视频转录工具",
+    "languageSwitch": "语言"
+  },
+  "input": {
+    "placeholder": "请输入 YouTube 视频链接",
+    "button": "获取转录",
+    "validating": "验证链接中...",
+    "invalid": "请输入有效的 YouTube 链接"
+  },
+  "transcript": {
+    "title": "转录文本",
+    "loading": "正在获取转录，请稍候...",
+    "noSubtitles": "该视频暂无可用字幕",
+    "error": "获取转录失败",
+    "copy": "复制",
+    "export": "导出"
+  },
+  "summary": {
+    "title": "AI 摘要",
+    "button": "生成摘要",
+    "loading": "正在生成摘要...",
+    "error": "生成摘要失败",
+    "copy": "复制"
+  },
+  "translation": {
+    "title": "翻译",
+    "button": "翻译",
+    "loading": "翻译中...",
+    "error": "翻译失败",
+    "copy": "复制",
+    "languages": {
+      "en": "英语",
+      "zh": "中文",
+      "es": "西班牙语",
+      "fr": "法语",
+      "de": "德语",
+      "ja": "日语",
+      "ko": "韩语"
+    }
+  },
+  "export": {
+    "txt": "导出为 TXT",
+    "srt": "导出为 SRT",
+    "success": "导出成功",
+    "copy": "复制"
+  }
+}
