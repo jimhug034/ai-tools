@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { translateText } from "@ai-tools/api-clients";
+import { translateText } from "@ai-tools/api-clients/src/groq";
 
 export async function POST(request: NextRequest) {
   try {

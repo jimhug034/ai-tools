@@ -20,6 +20,7 @@ export default function HomePage() {
   const t = useTranslations();
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
+  const [errorHint, setErrorHint] = useState("");
   const [loading, setLoading] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptItem[]>([]);
   const [summary, setSummary] = useState("");
@@ -37,6 +38,7 @@ export default function HomePage() {
     }
 
     setError("");
+    setErrorHint("");
     setLoading(true);
     setTranscript([]);
     setSummary("");
@@ -52,12 +54,16 @@ export default function HomePage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || t("transcript.error"));
+        setError(data.error || t("transcript.error"));
+        setErrorHint(data.hint ?? "");
+        setLoading(false);
+        return;
       }
 
       setTranscript(data.items);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("transcript.error"));
+      setErrorHint("");
     } finally {
       setLoading(false);
     }
@@ -155,6 +161,7 @@ export default function HomePage() {
               onChange={(e) => {
                 setUrl(e.target.value);
                 setError("");
+                setErrorHint("");
               }}
               className="pl-10"
               disabled={loading}
@@ -171,7 +178,14 @@ export default function HomePage() {
             )}
           </Button>
         </div>
-        {error && <p className="text-destructive text-sm mt-2">{error}</p>}
+        {error && (
+          <div className="mt-2 space-y-1">
+            <p className="text-destructive text-sm">{error}</p>
+            {errorHint && (
+              <p className="text-muted-foreground text-xs max-w-2xl">{errorHint}</p>
+            )}
+          </div>
+        )}
       </form>
 
       {transcript.length > 0 && (

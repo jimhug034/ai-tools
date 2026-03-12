@@ -43,3 +43,6 @@ test-results
 
 # Turbo
 .turbo
+
+# Claude
+*.local.json

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ai-tools/api-clients": "workspace:*",
+    "undici": "^7.0.0",
     "@ai-tools/config": "workspace:*",
     "@ai-tools/ui": "workspace:*",
     "@ai-tools/utils": "workspace:*",
