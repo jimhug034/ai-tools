@@ -7,7 +7,7 @@ import { Button } from "@ai-tools/ui";
 import { Input } from "@ai-tools/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@ai-tools/ui";
 import { Textarea } from "@ai-tools/ui";
-import { Select } from "@ai-tools/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ai-tools/ui";
 import { extractVideoId, formatTimestamp, formatSrtTime } from "@ai-tools/utils";
 
 export interface TranscriptItem {
@@ -255,14 +255,19 @@ export default function HomePage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Select value={targetLang} onChange={(e) => setTargetLang(e.target.value)}>
-                <option value="en">{t("translation.languages.en")}</option>
-                <option value="zh">{t("translation.languages.zh")}</option>
-                <option value="es">{t("translation.languages.es")}</option>
-                <option value="fr">{t("translation.languages.fr")}</option>
-                <option value="de">{t("translation.languages.de")}</option>
-                <option value="ja">{t("translation.languages.ja")}</option>
-                <option value="ko">{t("translation.languages.ko")}</option>
+              <Select value={targetLang} onValueChange={(value) => setTargetLang(value as string)}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("translation.selectLanguage")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">{t("translation.languages.en")}</SelectItem>
+                  <SelectItem value="zh">{t("translation.languages.zh")}</SelectItem>
+                  <SelectItem value="es">{t("translation.languages.es")}</SelectItem>
+                  <SelectItem value="fr">{t("translation.languages.fr")}</SelectItem>
+                  <SelectItem value="de">{t("translation.languages.de")}</SelectItem>
+                  <SelectItem value="ja">{t("translation.languages.ja")}</SelectItem>
+                  <SelectItem value="ko">{t("translation.languages.ko")}</SelectItem>
+                </SelectContent>
               </Select>
               {!translation ? (
                 <Button onClick={handleTranslate} className="w-full">

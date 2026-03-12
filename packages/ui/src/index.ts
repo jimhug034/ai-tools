@@ -2,7 +2,6 @@ export { Button, buttonVariants } from "./components/button";
 export type { ButtonProps } from "./components/button";
 
 export { Input } from "./components/input";
-export type { InputProps } from "./components/input";
 
 export {
   Card,
@@ -14,7 +13,16 @@ export {
 } from "./components/card";
 
 export { Textarea } from "./components/textarea";
-export type { TextareaProps } from "./components/textarea";
 
-export { Select } from "./components/select";
-export type { SelectProps } from "./components/select";
+export {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectScrollDownButton,
+  SelectScrollUpButton,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "./components/select";

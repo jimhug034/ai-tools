@@ -15,6 +15,7 @@
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
+    "lefthook": "^2.1.4",
     "oxfmt": "^0.39.0",
     "oxlint": "^1.54.0",
     "turbo": "^2.0.0",
