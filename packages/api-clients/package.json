@@ -13,7 +13,6 @@
     "groq-sdk": "^0.7.0"
   },
   "devDependencies": {
-    "@types/youtube-transcript": "^1.0.0",
     "vitest": "^2.0.0",
     "@ai-tools/config": "workspace:*"
   }
