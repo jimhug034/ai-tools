@@ -1,4 +1,4 @@
-import {YoutubeTranscript} from 'youtube-transcript';
+import { YoutubeTranscript } from "youtube-transcript";
 
 export interface TranscriptItem {
   text: string;
@@ -13,20 +13,24 @@ export interface TranscriptResult {
   language?: string;
 }
 
-export async function getTranscript(videoId: string): Promise<TranscriptResult> {
+export async function getTranscript(
+  videoId: string,
+): Promise<TranscriptResult> {
   try {
     const transcript = await YoutubeTranscript.fetchTranscript(videoId);
 
     return {
       videoId,
-      items: transcript.map(item => ({
+      items: transcript.map((item) => ({
         text: item.text,
         duration: item.duration,
         offset: item.offset,
-        lang: item.lang
-      }))
+        lang: item.lang,
+      })),
     };
   } catch (error) {
-    throw new Error(`Failed to fetch transcript: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to fetch transcript: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
