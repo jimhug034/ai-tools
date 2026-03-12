@@ -1,4 +1,6 @@
 {
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [],
   "lineWidth": 100,
   "indentStyle": "space",
   "indentWidth": 2,

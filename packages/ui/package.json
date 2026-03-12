@@ -9,14 +9,14 @@
     "test": "vitest"
   },
   "dependencies": {
-    "react": "^19.0.0",
     "@ai-tools/utils": "workspace:*",
-    "class-variance-authority": "^0.7.0"
+    "class-variance-authority": "^0.7.0",
+    "react": "^19.0.0"
   },
   "devDependencies": {
+    "@ai-tools/config": "workspace:*",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "vitest": "^2.0.0",
-    "@ai-tools/config": "workspace:*"
+    "vitest": "^2.0.0"
   }
 }

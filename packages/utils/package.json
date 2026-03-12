@@ -13,7 +13,7 @@
     "tailwind-merge": "^2.5.0"
   },
   "devDependencies": {
-    "vitest": "^2.0.0",
-    "@ai-tools/config": "workspace:*"
+    "@ai-tools/config": "workspace:*",
+    "vitest": "^2.0.0"
   }
 }

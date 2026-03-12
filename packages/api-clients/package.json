@@ -9,11 +9,11 @@
     "test": "vitest"
   },
   "dependencies": {
-    "youtube-transcript": "^1.2.0",
-    "groq-sdk": "^0.7.0"
+    "groq-sdk": "^0.7.0",
+    "youtube-transcript": "^1.2.0"
   },
   "devDependencies": {
-    "vitest": "^2.0.0",
-    "@ai-tools/config": "workspace:*"
+    "@ai-tools/config": "workspace:*",
+    "vitest": "^2.0.0"
   }
 }

@@ -9,6 +9,7 @@
 **技术栈:** Next.js 15, React 19, TypeScript, TailwindCSS, shadcn/ui, next-intl, Vitest, Playwright
 
 **Monorepo 结构:**
+
 ```
 ai-tools/
 ├── apps/
@@ -31,6 +32,7 @@ ai-tools/
 ### Task 0: Monorepo 项目初始化
 
 **Files:**
+
 - Create: `package.json` (根目录)
 - Create: `pnpm-workspace.yaml`
 - Create: `turbo.json`
@@ -202,6 +204,7 @@ git commit -m "chore: initialize monorepo with pnpm and turbo"
 ### Task 1: 创建共享配置包
 
 **Files:**
+
 - Create: `packages/config/package.json`
 - Create: `packages/config/index.ts`
 - Create: `packages/config/tsconfig.json`
@@ -350,6 +353,7 @@ git commit -m "chore: add shared config package"
 ### Task 2: 创建共享工具包
 
 **Files:**
+
 - Create: `packages/utils/package.json`
 - Create: `packages/utils/src/index.ts`
 - Create: `packages/utils/src/youtube.ts`
@@ -555,6 +559,7 @@ git commit -m "chore: add shared utils package"
 ### Task 3: 创建共享 UI 组件包
 
 **Files:**
+
 - Create: `packages/ui/package.json`
 - Create: `packages/ui/src/index.ts`
 - Create: `packages/ui/src/components/button.tsx`
@@ -860,6 +865,7 @@ git commit -m "chore: add shared UI components package"
 ### Task 4: 创建 API 客户端包
 
 **Files:**
+
 - Create: `packages/api-clients/package.json`
 - Create: `packages/api-clients/src/index.ts`
 - Create: `packages/api-clients/src/youtube.ts`
@@ -1017,6 +1023,7 @@ git commit -m "chore: add shared API clients package"
 ### Task 5: 创建 YouTube 转录应用基础结构
 
 **Files:**
+
 - Create: `apps/youtube-transcript/package.json`
 - Create: `apps/youtube-transcript/tsconfig.json`
 - Create: `apps/youtube-transcript/next.config.js`
@@ -1154,6 +1161,7 @@ git commit -m "chore: add youtube-transcript app base structure"
 ### Task 6: 创建应用国际化配置
 
 **Files:**
+
 - Create: `apps/youtube-transcript/src/i18n.ts`
 - Create: `apps/youtube-transcript/src/middleware.ts`
 - Create: `apps/youtube-transcript/messages/en.json`
@@ -1331,6 +1339,7 @@ git commit -m "feat: add i18n configuration"
 ### Task 7: 创建应用 API 路由
 
 **Files:**
+
 - Create: `apps/youtube-transcript/src/app/api/transcript/route.ts`
 - Create: `apps/youtube-transcript/src/app/api/summarize/route.ts`
 - Create: `apps/youtube-transcript/src/app/api/translate/route.ts`
@@ -1486,6 +1495,7 @@ git commit -m "feat: add API routes for transcript, summary, and translation"
 ### Task 8: 创建应用布局和页面
 
 **Files:**
+
 - Create: `apps/youtube-transcript/src/app/layout.tsx`
 - Create: `apps/youtube-transcript/src/app/globals.css`
 - Create: `apps/youtube-transcript/src/lib/navigation.ts`
@@ -1987,6 +1997,7 @@ git commit -m "feat: add app layout and main page"
 ### Task 9: 添加测试配置
 
 **Files:**
+
 - Create: `apps/youtube-transcript/vitest.config.ts`
 - Create: `apps/youtube-transcript/playwright.config.ts`
 - Create: `apps/youtube-transcript/tests/e2e/basic-flow.test.ts`
@@ -2087,6 +2098,7 @@ git commit -m "test: add test configurations for vitest and playwright"
 ### Task 10: 添加部署配置和文档
 
 **Files:**
+
 - Create: `apps/youtube-transcript/vercel.json`
 - Create: `apps/youtube-transcript/README.md`
 - Create: `README.md` (根目录)

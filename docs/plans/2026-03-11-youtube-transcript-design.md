@@ -16,18 +16,18 @@
 
 ## 2. 技术选型
 
-| 类别 | 技术选择 | 理由 |
-|------|----------|------|
-| **框架** | Next.js (App Router) | React 全栈框架，Vercel 原生支持 |
-| **后端** | Node.js API Routes | 与 Next.js 深度集成 |
-| **样式** | TailwindCSS | 快速开发，响应式设计 |
-| **组件库** | shadcn/ui | 美观、可定制的 UI 组件 |
-| **国际化** | next-intl | 成熟的 Next.js 国际化方案 |
-| **图标** | lucide-react | 轻量级图标库 |
-| **转录 API** | youtube-transcript (优先) + Groq Whisper (备用) | 混合方案，速度与覆盖兼顾 |
-| **AI 服务** | Groq Llama 3 | 免费层慷慨，速度极快 |
-| **部署** | Vercel | Next.js 原生支持，全球 CDN |
-| **测试** | Vitest + agents-browser | 单元测试 + E2E 测试 |
+| 类别         | 技术选择                                        | 理由                            |
+| ------------ | ----------------------------------------------- | ------------------------------- |
+| **框架**     | Next.js (App Router)                            | React 全栈框架，Vercel 原生支持 |
+| **后端**     | Node.js API Routes                              | 与 Next.js 深度集成             |
+| **样式**     | TailwindCSS                                     | 快速开发，响应式设计            |
+| **组件库**   | shadcn/ui                                       | 美观、可定制的 UI 组件          |
+| **国际化**   | next-intl                                       | 成熟的 Next.js 国际化方案       |
+| **图标**     | lucide-react                                    | 轻量级图标库                    |
+| **转录 API** | youtube-transcript (优先) + Groq Whisper (备用) | 混合方案，速度与覆盖兼顾        |
+| **AI 服务**  | Groq Llama 3                                    | 免费层慷慨，速度极快            |
+| **部署**     | Vercel                                          | Next.js 原生支持，全球 CDN      |
+| **测试**     | Vitest + agents-browser                         | 单元测试 + E2E 测试             |
 
 ## 3. 架构设计
 
@@ -106,13 +106,13 @@
 
 ### 核心组件
 
-| 组件 | 描述 |
-|------|------|
-| `UrlInput` | URL 输入框，自动验证 YouTube 链接格式 |
-| `TranscriptDisplay` | 转录文本展示，支持时间戳点击跳转 |
-| `SummaryDisplay` | AI 摘要展示区 |
-| `TranslationDisplay` | 翻译结果展示，支持语言切换 |
-| `ExportButton` | 导出按钮（TXT/SRT 格式） |
+| 组件                 | 描述                                  |
+| -------------------- | ------------------------------------- |
+| `UrlInput`           | URL 输入框，自动验证 YouTube 链接格式 |
+| `TranscriptDisplay`  | 转录文本展示，支持时间戳点击跳转      |
+| `SummaryDisplay`     | AI 摘要展示区                         |
+| `TranslationDisplay` | 翻译结果展示，支持语言切换            |
+| `ExportButton`       | 导出按钮（TXT/SRT 格式）              |
 
 ## 5. 数据流与状态管理
 
@@ -150,13 +150,13 @@ POST /api/translate
 
 ```typescript
 interface AppState {
-  url: string;              // 输入的 URL
-  loading: boolean;         // 加载状态
-  transcript: Transcript | null;    // 转录结果
-  summary: string | null;   // AI 摘要
+  url: string; // 输入的 URL
+  loading: boolean; // 加载状态
+  transcript: Transcript | null; // 转录结果
+  summary: string | null; // AI 摘要
   translation: string | null; // 翻译结果
-  targetLang: string;       // 目标翻译语言
-  error: string | null;     // 错误信息
+  targetLang: string; // 目标翻译语言
+  error: string | null; // 错误信息
 }
 ```
 
@@ -164,23 +164,23 @@ interface AppState {
 
 ### 需要处理的场景
 
-| 场景 | 处理方式 |
-|------|----------|
-| **无效的 YouTube URL** | 实时验证，提示"请输入有效的 YouTube 链接" |
-| **视频无字幕** | 尝试 Groq Whisper API；如失败，提示"该视频暂无可用字幕" |
-| **视频过长（>2小时）** | 提示"视频较长，处理可能需要较长时间" |
-| **API 限流** | 提示"请求过于频繁，请稍后再试" |
-| **网络错误** | 友好提示，提供重试按钮 |
-| **导出失败** | 提示"导出失败，请重试" |
+| 场景                   | 处理方式                                                |
+| ---------------------- | ------------------------------------------------------- |
+| **无效的 YouTube URL** | 实时验证，提示"请输入有效的 YouTube 链接"               |
+| **视频无字幕**         | 尝试 Groq Whisper API；如失败，提示"该视频暂无可用字幕" |
+| **视频过长（>2小时）** | 提示"视频较长，处理可能需要较长时间"                    |
+| **API 限流**           | 提示"请求过于频繁，请稍后再试"                          |
+| **网络错误**           | 友好提示，提供重试按钮                                  |
+| **导出失败**           | 提示"导出失败，请重试"                                  |
 
 ### 用户提示信息（双语）
 
-| 场景 | 中文 | English |
-|------|------|---------|
-| 正在处理 | "正在获取转录，请稍候..." | "Fetching transcript, please wait..." |
-| 处理成功 | "转录获取成功！" | "Transcript fetched successfully!" |
-| 无字幕 | "该视频暂无可用字幕" | "No subtitles available for this video" |
-| API 错误 | "服务暂时不可用，请稍后重试" | "Service temporarily unavailable" |
+| 场景     | 中文                         | English                                 |
+| -------- | ---------------------------- | --------------------------------------- |
+| 正在处理 | "正在获取转录，请稍候..."    | "Fetching transcript, please wait..."   |
+| 处理成功 | "转录获取成功！"             | "Transcript fetched successfully!"      |
+| 无字幕   | "该视频暂无可用字幕"         | "No subtitles available for this video" |
+| API 错误 | "服务暂时不可用，请稍后重试" | "Service temporarily unavailable"       |
 
 ## 7. 测试策略
 
@@ -268,6 +268,7 @@ NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
 ## 11. 后续扩展
 
 可能的未来功能：
+
 - Chrome 浏览器扩展
 - 历史记录保存
 - 批量处理多个视频

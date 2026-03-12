@@ -13,9 +13,7 @@ export interface TranscriptResult {
   language?: string;
 }
 
-export async function getTranscript(
-  videoId: string,
-): Promise<TranscriptResult> {
+export async function getTranscript(videoId: string): Promise<TranscriptResult> {
   try {
     const transcript = await YoutubeTranscript.fetchTranscript(videoId);
 
@@ -30,7 +28,7 @@ export async function getTranscript(
     };
   } catch (error) {
     throw new Error(
-      `Failed to fetch transcript: ${error instanceof Error ? error.message : "Unknown error"}`,
+      `Failed to fetch transcript: ${error instanceof Error ? error.message : "Unknown error"}`
     );
   }
 }

@@ -1,21 +1,22 @@
-import type {Metadata} from 'next';
-import {NextIntlClientProvider} from 'next-intl';
-import {getMessages} from 'next-intl/server';
-import {Link} from '@/lib/navigation';
-import '../globals.css';
+import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
+import { Link } from "@/lib/navigation";
+import "../globals.css";
 
 export const metadata: Metadata = {
-  title: 'YouTube Transcript Tool',
-  description: 'Get instant transcripts from YouTube videos',
+  title: "YouTube Transcript Tool",
+  description: "Get instant transcripts from YouTube videos",
 };
 
 export default async function LocaleLayout({
   children,
-  params: {locale}
+  params,
 }: {
   children: React.ReactNode;
-  params: {locale: string};
+  params: Promise<{ lang: string }>;
 }) {
+  const { lang: locale } = await params;
   const messages = await getMessages();
 
   return (
@@ -32,23 +33,21 @@ export default async function LocaleLayout({
                   <Link
                     href="/"
                     locale="en"
-                    className={`px-3 py-1 rounded text-sm ${locale === 'en' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                    className={`px-3 py-1 rounded text-sm ${locale === "en" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                   >
                     EN
                   </Link>
                   <Link
                     href="/"
                     locale="zh"
-                    className={`px-3 py-1 rounded text-sm ${locale === 'zh' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+                    className={`px-3 py-1 rounded text-sm ${locale === "zh" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                   >
                     中
                   </Link>
                 </div>
               </div>
             </header>
-            <main className="container mx-auto px-4 py-8">
-              {children}
-            </main>
+            <main className="container mx-auto px-4 py-8">{children}</main>
             <footer className="border-t mt-12">
               <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
                 <p>100% Free • No Registration Required</p>

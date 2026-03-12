@@ -37,15 +37,15 @@ pnpm test
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
-| `@ai-tools/ui` | Shared React components |
-| `@ai-tools/utils` | Shared utility functions |
-| `@ai-tools/api-clients` | Shared API clients (YouTube, Groq) |
-| `@ai-tools/config` | Shared TypeScript, Tailwind, ESLint configs |
+| Package                 | Description                                 |
+| ----------------------- | ------------------------------------------- |
+| `@ai-tools/ui`          | Shared React components                     |
+| `@ai-tools/utils`       | Shared utility functions                    |
+| `@ai-tools/api-clients` | Shared API clients (YouTube, Groq)          |
+| `@ai-tools/config`      | Shared TypeScript, Tailwind, ESLint configs |
 
 ## Apps
 
-| App | Description |
-|-----|-------------|
+| App                            | Description                                     |
+| ------------------------------ | ----------------------------------------------- |
 | `@ai-tools/youtube-transcript` | YouTube video transcript tool with AI summaries |
