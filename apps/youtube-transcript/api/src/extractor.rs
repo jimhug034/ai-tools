@@ -60,6 +60,11 @@ impl CaptionExtractor {
         Self { client }
     }
 
+    /// 获取内部 HTTP 客户端的引用
+    pub fn client(&self) -> &Client {
+        &self.client
+    }
+
     /// 提取视频信息
     pub async fn extract_video_info(&self, url: &str) -> Result<VideoInfo> {
         let video_id = extract_video_id(url)?;
@@ -86,12 +91,14 @@ impl CaptionExtractor {
 
     /// 提取可用的字幕轨道列表
     pub async fn extract_caption_tracks(&self, video_id: &str) -> Result<Vec<CaptionTrack>> {
-        let url = format!("https://www.youtube.com/watch?v={}", video_id);
+        // 首先尝试 embed 页面，它通常包含更完整的字幕信息
+        let embed_url = format!("https://www.youtube.com/embed/{}", video_id);
 
-        eprintln!("Fetching video page: {}", url);
+        eprintln!("Fetching embed page: {}", embed_url);
 
-        let html = self.client
-            .get(&url)
+        let embed_html = self.client
+            .get(&embed_url)
+            .header("Referer", "https://www.youtube.com/")
             .send()
             .await
             .map_err(|e| YtError::FetchFailed(e.to_string()))?
@@ -99,15 +106,51 @@ impl CaptionExtractor {
             .await
             .map_err(|e| YtError::FetchFailed(e.to_string()))?;
 
-        eprintln!("Fetched HTML, length: {}", html.len());
+        eprintln!("Fetched embed HTML, length: {}", embed_html.len());
+
+        // 尝试从 embed 页面解析
+        if let Ok(tracks) = self.parse_caption_tracks(&embed_html) {
+            if !tracks.is_empty() {
+                eprintln!("Found {} caption tracks from embed page", tracks.len());
+                return Ok(tracks);
+            }
+        }
+
+        // embed 页面没有找到，尝试普通 watch 页面
+        let watch_url = format!("https://www.youtube.com/watch?v={}", video_id);
+
+        eprintln!("Fetching watch page: {}", watch_url);
+
+        let html = self.client
+            .get(&watch_url)
+            .send()
+            .await
+            .map_err(|e| YtError::FetchFailed(e.to_string()))?
+            .text()
+            .await
+            .map_err(|e| YtError::FetchFailed(e.to_string()))?;
+
+        eprintln!("Fetched watch HTML, length: {}", html.len());
 
         self.parse_caption_tracks(&html)
     }
 
     /// 从 HTML 中解析字幕轨道
     fn parse_caption_tracks(&self, html: &str) -> Result<Vec<CaptionTrack>> {
-        // 方法 1: 解析 ytInitialData JSON
+        // 方法 1: 解析 ytInitialPlayerResponse (youtubei.js 使用的方法)
+        if let Some(data) = extract_yt_initial_player_response(html) {
+            eprintln!("Trying to parse ytInitialPlayerResponse");
+            if let Ok(tracks) = parse_caption_tracks_from_json(&data) {
+                if !tracks.is_empty() {
+                    eprintln!("Found {} tracks from ytInitialPlayerResponse", tracks.len());
+                    return Ok(tracks);
+                }
+            }
+        }
+
+        // 方法 2: 解析 ytInitialData JSON
         if let Some(data) = extract_yt_initial_data(html) {
+            eprintln!("Trying to parse ytInitialData");
             if let Ok(tracks) = parse_caption_tracks_from_json(&data) {
                 if !tracks.is_empty() {
                     return Ok(tracks);
@@ -115,7 +158,7 @@ impl CaptionExtractor {
             }
         }
 
-        // 方法 2: 使用正则表达式直接搜索
+        // 方法 3: 使用正则表达式直接搜索
         self.extract_caption_tracks_by_regex(html)
     }
 
@@ -260,6 +303,31 @@ fn extract_yt_initial_data(html: &str) -> Option<String> {
 
     VAR_INITIAL_DATA_RE.captures(html)
         .map(|caps| caps[1].to_string())
+}
+
+/// 从 HTML 中提取 ytInitialPlayerResponse（youtubei.js 使用的方法）
+fn extract_yt_initial_player_response(html: &str) -> Option<String> {
+    // 尝试多种模式
+    let patterns = [
+        ("ytInitialPlayerResponse = ", ";"),
+        ("var ytInitialPlayerResponse = ", ";"),
+        ("ytInitialPlayerResponse\":\"", "\""),
+    ];
+
+    for (start_pattern, end_pattern) in &patterns {
+        if let Some(start) = html.find(start_pattern) {
+            let data_start = start + start_pattern.len();
+            if let Some(end) = html[data_start..].find(end_pattern) {
+                let data_str = &html[data_start..data_start + end];
+                // 有些数据是转义的 JSON，需要处理
+                let unescaped = data_str.replace("\\\"", "\"").replace("\\\\", "\\");
+                eprintln!("Found ytInitialPlayerResponse, size: {} bytes", unescaped.len());
+                return Some(unescaped);
+            }
+        }
+    }
+
+    None
 }
 
 /// 从 JSON 数据中解析字幕轨道

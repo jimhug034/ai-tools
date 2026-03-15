@@ -7,6 +7,7 @@ pub mod types;
 pub mod extractor;
 pub mod downloader;
 pub mod converter;
+pub mod innertube;
 
 pub use error::{Result, YtError};
 pub use types::*;

@@ -19,6 +19,7 @@ use youtube_transcript::{
     downloader::CaptionDownloader,
     error::YtError,
     extractor::{extract_video_id, CaptionExtractor},
+    innertube::InnertubeClient,
     types::{CaptionKind, SubtitleFormat},
 };
 
@@ -58,6 +59,7 @@ static HTTP_CLIENT: Lazy<Client> = Lazy::new(|| {
 struct AppState {
     extractor: Arc<CaptionExtractor>,
     downloader: Arc<CaptionDownloader>,
+    innertube: Arc<InnertubeClient>,
 }
 
 // ==================== API 数据结构 ====================
@@ -159,68 +161,112 @@ async fn transcript_handler(
             details: Some("Could not extract video ID".to_string()),
         })?;
 
-    // 获取字幕轨道并立即下载（避免签名过期）
-    // 最多重试 3 次，因为字幕 URL 签名可能过期
-    let mut subtitle_data = None;
-    let mut last_error = None;
+    eprintln!("Processing video: {}", video_id);
 
-    for attempt in 1..=3 {
-        let tracks = state.extractor
-            .extract_caption_tracks(&video_id)
-            .await
-            .map_err(map_yt_error)?;
+    // 首先获取视频 HTML 页面
+    let watch_url = format!("https://www.youtube.com/watch?v={}", video_id);
+    let html = state
+        .extractor
+        .client()
+        .get(&watch_url)
+        .send()
+        .await
+        .map_err(|e| ErrorResponse {
+            error: "Failed to fetch video".to_string(),
+            details: Some(e.to_string()),
+        })?
+        .text()
+        .await
+        .map_err(|e| ErrorResponse {
+            error: "Failed to read video page".to_string(),
+            details: Some(e.to_string()),
+        })?;
 
-        if tracks.is_empty() {
-            return Err(ErrorResponse {
-                error: "No captions found".to_string(),
-                details: Some("This video has no available captions".to_string()),
-            });
-        }
+    eprintln!("Fetched HTML, length: {}", html.len());
 
-        // 优先选择非自动字幕，然后是英文，最后是第一个可用字幕
-        let track = tracks
-            .iter()
-            .filter(|t| t.kind == CaptionKind::Manual)
-            .find(|t| t.language_code == "en" || t.language_code.starts_with("en-"))
-            .or_else(|| tracks.iter().find(|t| t.kind == CaptionKind::Manual))
-            .or_else(|| tracks.iter().find(|t| t.language_code == "en" || t.language_code.starts_with("en-")))
-            .or_else(|| tracks.first())
-            .ok_or_else(|| ErrorResponse {
-                error: "No captions found".to_string(),
-                details: None,
-            })?;
-
-        eprintln!(
-            "Attempt {}: Using caption track: {} ({})",
-            attempt,
-            track.name.as_ref().unwrap_or(&track.language_code),
-            track.language_code
-        );
-
-        // 下载字幕
-        match state.downloader.download(track).await {
-            Ok(data) => {
-                subtitle_data = Some(data);
-                break;
-            }
-            Err(e) => {
-                let error_msg = e.to_string();
-                eprintln!("Download attempt {} failed: {}", attempt, error_msg);
-                last_error = Some(e);
-                // 如果不是 URL 过期错误，直接返回
-                if !error_msg.contains("过期") && !error_msg.contains("内容为空") {
-                    break;
+    // 尝试使用 innertube API 获取字幕（URL 不会过期）
+    let tracks = if let Ok(player_response) = state.innertube.get_player_info(&video_id, &html).await {
+        eprintln!("Got caption tracks from innertube API");
+        let innertube_tracks = state.innertube.extract_caption_tracks(&player_response);
+        if !innertube_tracks.is_empty() {
+            eprintln!("Innertube API returned {} tracks", innertube_tracks.len());
+            // 将 innertube 的 CaptionTrackInfo 转换为 CaptionTrack
+            innertube_tracks.into_iter().map(|t| {
+                youtube_transcript::types::CaptionTrack {
+                    base_url: t.base_url,
+                    language_code: t.language_code,
+                    name: t.name.map(|n| n.get_text()),
+                    kind: match t.kind.as_deref() {
+                        Some("asr") | Some("auto") => youtube_transcript::types::CaptionKind::Auto,
+                        _ => youtube_transcript::types::CaptionKind::Manual,
+                    },
+                    is_translatable: t.is_translatable.unwrap_or(true),
                 }
-            }
+            }).collect()
+        } else {
+            // innertube 返回空，尝试从 HTML 解析
+            eprintln!("Innertube returned no tracks, falling back to HTML parsing");
+            state.extractor.extract_caption_tracks(&video_id).await.map_err(map_yt_error)?
         }
+    } else {
+        eprintln!("Innertube API failed, using HTML parsing");
+        state.extractor.extract_caption_tracks(&video_id).await.map_err(map_yt_error)?
+    };
+
+    if tracks.is_empty() {
+        return Err(ErrorResponse {
+            error: "No captions found".to_string(),
+            details: Some("This video has no available captions".to_string()),
+        });
     }
 
-    let subtitle_data = subtitle_data.ok_or_else(|| {
-        last_error.map(map_yt_error).unwrap_or_else(|| ErrorResponse {
-            error: "Failed to fetch transcript".to_string(),
-            details: Some("All download attempts failed".to_string()),
-        })
-    })?;
+    eprintln!("Found {} caption tracks", tracks.len());
+
+    // 选择最佳字幕轨道
+    let track = tracks
+        .iter()
+        .filter(|t| t.kind != youtube_transcript::types::CaptionKind::Auto)
+        .find(|t| t.language_code == "en" || t.language_code.starts_with("en-"))
+        .or_else(|| tracks.iter().find(|t| t.kind != youtube_transcript::types::CaptionKind::Auto))
+        .or_else(|| tracks.iter().find(|t| t.language_code == "en" || t.language_code.starts_with("en-")))
+        .or_else(|| tracks.first())
+        .ok_or_else(|| ErrorResponse {
+            error: "No captions found".to_string(),
+            details: None,
+        })?;
+
+    eprintln!(
+        "Using caption track: {} ({}, kind: {:?})",
+        track.name.as_ref().unwrap_or(&track.language_code),
+        track.language_code,
+        track.kind
+    );
+
+    // 下载字幕内容 - 如果失败，立即重新获取字幕 URL
+    let subtitle_data = match state.downloader.download(track).await {
+        Ok(data) => data,
+        Err(e) => {
+            eprintln!("First download attempt failed: {:?}", e);
+            eprintln!("Immediately refreshing caption URL...");
+
+            // 立即重新获取字幕轨道，获取新的 URL
+            let fresh_tracks = state.extractor.extract_caption_tracks(&video_id).await
+                .map_err(map_yt_error)?;
+
+            let fresh_track = fresh_tracks
+                .iter()
+                .find(|t| t.language_code == track.language_code && t.kind == track.kind)
+                .or_else(|| fresh_tracks.iter().find(|t| t.language_code == track.language_code))
+                .or_else(|| fresh_tracks.first())
+                .ok_or_else(|| ErrorResponse {
+                    error: "No captions found".to_string(),
+                    details: Some("Failed to refresh caption URL".to_string()),
+                })?;
+
+            eprintln!("Retrying with fresh URL: {}...", &fresh_track.base_url[..100]);
+            state.downloader.download(fresh_track).await.map_err(map_yt_error)?
+        }
+    };
 
     // 转换为 API 格式
     let items = subtitle_data
@@ -400,9 +446,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = format!("0.0.0.0:{}", port);
 
     // 创建服务实例
+    let downloader = CaptionDownloader::with_client(HTTP_CLIENT.clone());
+
     let state = AppState {
         extractor: Arc::new(CaptionExtractor::with_client(HTTP_CLIENT.clone())),
-        downloader: Arc::new(CaptionDownloader::with_client(HTTP_CLIENT.clone())),
+        downloader: Arc::new(downloader),
+        innertube: Arc::new(InnertubeClient::with_client(HTTP_CLIENT.clone())),
     };
 
     let app = Router::new()
