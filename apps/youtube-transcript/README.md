@@ -5,11 +5,13 @@ A free YouTube video transcript tool with AI-powered summaries and translations.
 ## Features
 
 - 📹 Get instant transcripts from YouTube videos
+- 🎬 Support for manual and auto-generated captions
+- 📝 Export transcripts in multiple formats (SRT, VTT, ASS, TXT, LRC)
 - 🤖 AI-powered video summaries
 - 🌐 Multi-language translation support
-- 📥 Export transcripts as TXT or SRT files
 - 🌍 Bilingual UI (English/Chinese)
 - 💰 100% free, no registration required
+- 🦀 Pure Rust implementation - no yt-dlp dependency
 
 ## Project Structure
 
@@ -25,9 +27,6 @@ youtube-transcript/
 ### 1. 启动 Rust 字幕服务（必需）
 
 ```bash
-# 安装 yt-dlp（如果还没有）
-brew install yt-dlp
-
 # 启动 Rust 服务
 pnpm dev:api
 # 或
@@ -35,6 +34,16 @@ cd apps/youtube-transcript/api && cargo run
 ```
 
 服务将在 `http://localhost:8080` 运行。
+
+#### API 端点
+
+| 端点 | 方法 | 描述 |
+|------|------|------|
+| `/transcript` | POST | 获取视频字幕（JSON 格式） |
+| `/format` | GET | 获取指定格式的字幕（srt, vtt, ass, txt, lrc） |
+| `/info` | GET | 获取视频信息和可用字幕列表 |
+| `/formats` | GET | 获取支持的格式列表 |
+| `/health` | GET | 健康检查 |
 
 ### 2. 启动 Next.js 开发服务器
 

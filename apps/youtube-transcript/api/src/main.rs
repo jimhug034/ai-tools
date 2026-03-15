@@ -1,17 +1,71 @@
 use axum::{
-    extract::Json,
+    extract::{Query, State},
     http::StatusCode,
     response::{IntoResponse, Response},
     routing::{get, post},
-    Router,
+    Json, Router,
 };
+use once_cell::sync::Lazy;
+use reqwest::{Client, Proxy};
 use serde::{Deserialize, Serialize};
-use std::process::Command;
+use std::sync::Arc;
+use std::time::Duration;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 
+// 导入库模块
+use youtube_transcript::{
+    converter::SubtitleConverter,
+    downloader::CaptionDownloader,
+    error::YtError,
+    extractor::{extract_video_id, CaptionExtractor},
+    types::{CaptionKind, SubtitleFormat},
+};
+
+// HTTP 客户端（单例）
+static HTTP_CLIENT: Lazy<Client> = Lazy::new(|| {
+    let mut builder = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+
+    // 配置代理
+    if let Ok(proxy) = std::env::var("HTTPS_PROXY") {
+        if let Ok(proxy_url) = Proxy::all(&proxy) {
+            builder = builder.proxy(proxy_url);
+            eprintln!("Proxy configured: {}", proxy);
+        }
+    } else if let Ok(proxy) = std::env::var("HTTP_PROXY") {
+        if let Ok(proxy_url) = Proxy::all(&proxy) {
+            builder = builder.proxy(proxy_url);
+            eprintln!("Proxy configured: {}", proxy);
+        }
+    }
+
+    builder.build().unwrap()
+});
+
+// 应用状态
+#[derive(Clone)]
+struct AppState {
+    extractor: Arc<CaptionExtractor>,
+    downloader: Arc<CaptionDownloader>,
+}
+
+// ==================== API 数据结构 ====================
+
 #[derive(Debug, Deserialize)]
 struct TranscriptRequest {
+    url: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct FormatRequest {
+    url: String,
+    format: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct InfoRequest {
     url: String,
 }
 
@@ -32,182 +86,55 @@ struct TranscriptResult {
 }
 
 #[derive(Debug, Serialize)]
+struct SubtitleFormatResult {
+    format: String,
+    content: String,
+}
+
+#[derive(Debug, Serialize)]
+struct CaptionTrackInfo {
+    base_url: String,
+    language_code: String,
+    name: Option<String>,
+    kind: String,
+}
+
+#[derive(Debug, Serialize)]
+struct VideoInfoResult {
+    video_id: String,
+    title: Option<String>,
+    url: String,
+    available_captions: Vec<CaptionTrackInfo>,
+}
+
+#[derive(Debug, Serialize)]
 struct ErrorResponse {
     error: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     details: Option<String>,
 }
 
-// HTML 实体解码
-fn decode_html_entities(text: &str) -> String {
-    text.replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"")
-        .replace("&#39;", "'")
-        .replace("&nbsp;", " ")
+// ==================== 辅助函数 ====================
+
+fn map_yt_error(e: YtError) -> ErrorResponse {
+    ErrorResponse {
+        error: match &e {
+            YtError::InvalidUrl(_) => "Invalid YouTube URL".to_string(),
+            YtError::VideoIdExtractionFailed => "Invalid YouTube URL".to_string(),
+            YtError::NoCaptionsFound => "No captions available".to_string(),
+            YtError::FetchFailed(_) => "Failed to fetch video".to_string(),
+            YtError::DownloadFailed(_) => "Failed to download captions".to_string(),
+            YtError::ParseError(_) => "Failed to parse data".to_string(),
+            _ => "Internal error".to_string(),
+        },
+        details: Some(e.to_string()),
+    }
 }
 
-// 从 YouTube URL 提取 video ID
-fn extract_video_id(url: &str) -> Option<String> {
-    // youtu.be/VIDEO_ID
-    if url.contains("youtu.be/") {
-        if let Some(idx) = url.find("youtu.be/") {
-            let rest = &url[idx + 9..];
-            let id = rest.split('?').next().unwrap_or(rest);
-            return Some(id.trim().to_string());
-        }
-    }
+// ==================== HTTP 处理器 ====================
 
-    // youtube.com/watch?v=VIDEO_ID
-    if url.contains("v=") {
-        if let Some(idx) = url.find("v=") {
-            let rest = &url[idx + 2..];
-            let id = rest.split('&').next().unwrap_or(rest);
-            return Some(id.trim().to_string());
-        }
-    }
-
-    // youtube.com/embed/VIDEO_ID
-    if url.contains("/embed/") {
-        if let Some(idx) = url.find("/embed/") {
-            let rest = &url[idx + 7..];
-            let id = rest.split('?').next().unwrap_or(rest);
-            return Some(id.trim().to_string());
-        }
-    }
-
-    None
-}
-
-// 使用 yt-dlp 获取字幕
-async fn get_transcript_via_ytdlp(video_id: &str) -> Result<TranscriptResult, String> {
-    let mut cmd = Command::new("yt-dlp");
-
-    // 设置代理
-    if let Ok(proxy) = std::env::var("HTTPS_PROXY") {
-        cmd.env("HTTPS_PROXY", proxy);
-    }
-    if let Ok(proxy) = std::env::var("HTTP_PROXY") {
-        cmd.env("HTTP_PROXY", proxy);
-    }
-
-    // yt-dlp 参数：下载字幕为 JSON3 格式
-    // 使用 android 客户端绕过 YouTube 的字幕限制
-    cmd.args([
-        "--extractor-args",
-        "youtube:player_client=android",
-        "--write-subs",
-        "--write-auto-subs",
-        "--skip-download",
-        "--sub-langs",
-        "en",
-        "--sub-format",
-        "json3",
-        "--no-warnings",
-        "-o",
-        "%(id)s.%(ext)s",
-        &format!("https://www.youtube.com/watch?v={}", video_id),
-    ]);
-
-    // 使用临时目录
-    let temp_dir = std::env::temp_dir();
-    cmd.current_dir(&temp_dir);
-
-    // 执行命令
-    let output = cmd.output().map_err(|e| format!("Failed to execute yt-dlp: {}", e))?;
-
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("yt-dlp failed: {}", stderr));
-    }
-
-    // 查找生成的 JSON3 字幕文件
-    let json_file = find_subtitle_file(&temp_dir, video_id)?;
-
-    // 读取并解析字幕
-    let content = std::fs::read_to_string(&json_file)
-        .map_err(|e| format!("Failed to read subtitle file: {}", e))?;
-
-    // 清理临时文件
-    let _ = std::fs::remove_file(json_file);
-
-    parse_json3_subtitles(&content, video_id)
-}
-
-// 查找字幕文件
-fn find_subtitle_file(temp_dir: &std::path::Path, video_id: &str) -> Result<String, String> {
-    let entries = std::fs::read_dir(temp_dir)
-        .map_err(|e| format!("Failed to read temp dir: {}", e))?;
-
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if let Some(file_name) = path.file_name() {
-            if let Some(name) = file_name.to_str() {
-                // 匹配 {video_id}.{lang}.json3 或 {video_id}.json3
-                if name.starts_with(video_id) && name.ends_with(".json3") {
-                    return path.to_str()
-                        .map(|s| s.to_string())
-                        .ok_or_else(|| "Invalid path".to_string());
-                }
-            }
-        }
-    }
-
-    Err(format!("No subtitle file found for video {}", video_id))
-}
-
-// 解析 JSON3 格式字幕
-fn parse_json3_subtitles(content: &str, video_id: &str) -> Result<TranscriptResult, String> {
-    let json: serde_json::Value = serde_json::from_str(content)
-        .map_err(|e| format!("Failed to parse JSON: {}", e))?;
-
-    let events = json["events"]
-        .as_array()
-        .ok_or_else(|| "Invalid JSON3 format: missing events".to_string())?;
-
-    let mut items = Vec::new();
-
-    for event in events {
-        // JSON3 格式使用 tStartMs 和 dDurationMs（毫秒）
-        let start_ms = event["tStartMs"].as_i64();
-        let dur_ms = event["dDurationMs"].as_i64();
-
-        if let (Some(start), Some(dur)) = (start_ms, dur_ms) {
-            let mut text = String::new();
-
-            if let Some(segs) = event["segs"].as_array() {
-                for seg in segs {
-                    if let Some(utf8) = seg["utf8"].as_str() {
-                        text.push_str(utf8);
-                    }
-                }
-            }
-
-            text = decode_html_entities(&text).trim().to_string();
-
-            if !text.is_empty() {
-                items.push(TranscriptItem {
-                    text,
-                    duration_secs: dur as f64 / 1000.0,
-                    offset_secs: start as f64 / 1000.0,
-                });
-            }
-        }
-    }
-
-    if items.is_empty() {
-        return Err("No valid subtitle segments found".to_string());
-    }
-
-    Ok(TranscriptResult {
-        video_id: video_id.to_string(),
-        items,
-    })
-}
-
-// 处理 transcript 请求
 async fn transcript_handler(
+    State(state): State<AppState>,
     Json(req): Json<TranscriptRequest>,
 ) -> Result<Json<TranscriptResult>, ErrorResponse> {
     if req.url.is_empty() {
@@ -218,45 +145,208 @@ async fn transcript_handler(
     }
 
     let video_id = extract_video_id(&req.url)
-        .ok_or_else(|| ErrorResponse {
+        .map_err(|_| ErrorResponse {
             error: "Invalid YouTube URL".to_string(),
             details: Some("Could not extract video ID".to_string()),
         })?;
 
-    get_transcript_via_ytdlp(&video_id)
+    // 获取字幕轨道
+    let tracks = state.extractor
+        .extract_caption_tracks(&video_id)
         .await
-        .map_err(|e| ErrorResponse {
-            error: "Failed to fetch transcript".to_string(),
-            details: Some(e),
+        .map_err(map_yt_error)?;
+
+    // 优先选择非自动字幕，然后是英文，最后是第一个可用字幕
+    let track = tracks
+        .iter()
+        .filter(|t| t.kind == CaptionKind::Manual)
+        .find(|t| t.language_code == "en" || t.language_code.starts_with("en-"))
+        .or_else(|| tracks.iter().find(|t| t.kind == CaptionKind::Manual))
+        .or_else(|| tracks.iter().find(|t| t.language_code == "en" || t.language_code.starts_with("en-")))
+        .or_else(|| tracks.first())
+        .ok_or_else(|| ErrorResponse {
+            error: "No captions found".to_string(),
+            details: None,
+        })?;
+
+    eprintln!(
+        "Using caption track: {} ({})",
+        track.name.as_ref().unwrap_or(&track.language_code),
+        track.language_code
+    );
+
+    // 下载字幕
+    let subtitle_data = state.downloader
+        .download(track)
+        .await
+        .map_err(map_yt_error)?;
+
+    // 转换为 API 格式
+    let items = subtitle_data
+        .entries
+        .into_iter()
+        .map(|entry| {
+            let duration_secs = entry.duration_secs();
+            let offset_secs = entry.start_secs();
+            TranscriptItem {
+                text: entry.text,
+                duration_secs,
+                offset_secs,
+            }
         })
-        .map(Json)
+        .collect();
+
+    Ok(Json(TranscriptResult {
+        video_id,
+        items,
+    }))
 }
 
-// 健康检查
-async fn health_handler() -> Result<Json<serde_json::Value>, StatusCode> {
-    let output = Command::new("yt-dlp")
-        .arg("--version")
-        .output();
-
-    match output {
-        Ok(o) if o.status.success() => {
-            let version = String::from_utf8_lossy(&o.stdout);
-            Ok(Json(serde_json::json!({
-                "status": "healthy",
-                "yt-dlp": version.trim()
-            })))
-        }
-        _ => Err(StatusCode::SERVICE_UNAVAILABLE),
+async fn format_handler(
+    State(state): State<AppState>,
+    Query(req): Query<FormatRequest>,
+) -> Result<Json<SubtitleFormatResult>, ErrorResponse> {
+    if req.url.is_empty() {
+        return Err(ErrorResponse {
+            error: "URL is required".to_string(),
+            details: None,
+        });
     }
+
+    let format = SubtitleFormat::from_str(&req.format).ok_or_else(|| ErrorResponse {
+        error: "Invalid format".to_string(),
+        details: Some(format!(
+            "Unsupported format: {}. Supported: srt, vtt, ass, txt, lrc",
+            req.format
+        )),
+    })?;
+
+    let video_id = extract_video_id(&req.url).map_err(|_| ErrorResponse {
+        error: "Invalid YouTube URL".to_string(),
+        details: Some("Could not extract video ID".to_string()),
+    })?;
+
+    // 获取字幕轨道
+    let tracks = state
+        .extractor
+        .extract_caption_tracks(&video_id)
+        .await
+        .map_err(map_yt_error)?;
+
+    let track = tracks
+        .iter()
+        .filter(|t| t.kind == CaptionKind::Manual)
+        .find(|t| t.language_code == "en" || t.language_code.starts_with("en-"))
+        .or_else(|| tracks.iter().find(|t| t.kind == CaptionKind::Manual))
+        .or_else(|| tracks.iter().find(|t| t.language_code == "en" || t.language_code.starts_with("en-")))
+        .or_else(|| tracks.first())
+        .ok_or_else(|| ErrorResponse {
+            error: "No captions found".to_string(),
+            details: None,
+        })?;
+
+    // 下载并转换字幕
+    let subtitle_data = state
+        .downloader
+        .download(track)
+        .await
+        .map_err(map_yt_error)?;
+
+    let content = SubtitleConverter::convert(&subtitle_data, format).map_err(|e| ErrorResponse {
+        error: "Format conversion failed".to_string(),
+        details: Some(e.to_string()),
+    })?;
+
+    Ok(Json(SubtitleFormatResult {
+        format: req.format,
+        content,
+    }))
 }
 
-// 错误响应实现
+async fn info_handler(
+    State(state): State<AppState>,
+    Query(req): Query<InfoRequest>,
+) -> Result<Json<VideoInfoResult>, ErrorResponse> {
+    if req.url.is_empty() {
+        return Err(ErrorResponse {
+            error: "URL is required".to_string(),
+            details: None,
+        });
+    }
+
+    let video_id = extract_video_id(&req.url).map_err(|_| ErrorResponse {
+        error: "Invalid YouTube URL".to_string(),
+        details: Some("Could not extract video ID".to_string()),
+    })?;
+
+    // 获取视频信息
+    let video_info = state
+        .extractor
+        .extract_video_info(&req.url)
+        .await
+        .map_err(map_yt_error)?;
+
+    // 获取可用字幕
+    let tracks = state
+        .extractor
+        .extract_caption_tracks(&video_id)
+        .await
+        .map_err(map_yt_error)?;
+
+    let available_captions = tracks
+        .into_iter()
+        .map(|t| CaptionTrackInfo {
+            base_url: t.base_url,
+            language_code: t.language_code,
+            name: t.name,
+            kind: if t.kind == CaptionKind::Auto {
+                "auto".to_string()
+            } else {
+                "manual".to_string()
+            },
+        })
+        .collect();
+
+    Ok(Json(VideoInfoResult {
+        video_id,
+        title: video_info.title,
+        url: video_info.url,
+        available_captions,
+    }))
+}
+
+async fn formats_handler() -> Json<serde_json::Value> {
+    Json(serde_json::json!({
+        "formats": [
+            {"name": "SRT", "value": "srt", "description": "SubRip subtitle format"},
+            {"name": "VTT", "value": "vtt", "description": "WebVTT subtitle format"},
+            {"name": "ASS", "value": "ass", "description": "Advanced SubStation Alpha format"},
+            {"name": "TXT", "value": "txt", "description": "Plain text format"},
+            {"name": "LRC", "value": "lrc", "description": "Lyrics format"}
+        ]
+    }))
+}
+
+async fn health_handler() -> Json<serde_json::Value> {
+    Json(serde_json::json!({
+        "status": "healthy",
+        "implementation": "pure-rust",
+        "features": [
+            "caption_extraction",
+            "caption_download",
+            "format_conversion"
+        ]
+    }))
+}
+
 impl IntoResponse for ErrorResponse {
     fn into_response(self) -> Response {
-        let status = if self.error.contains("Invalid") {
-            StatusCode::BAD_REQUEST
-        } else {
-            StatusCode::INTERNAL_SERVER_ERROR
+        let status = match self.error.as_str() {
+            "Invalid YouTube URL" | "Invalid format" | "URL is required" => {
+                StatusCode::BAD_REQUEST
+            }
+            "No captions found" | "No captions available" => StatusCode::NOT_FOUND,
+            _ => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         (status, Json(self)).into_response()
@@ -265,22 +355,28 @@ impl IntoResponse for ErrorResponse {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // 检查 yt-dlp 是否安装
-    let check = Command::new("yt-dlp").arg("--version").output();
-    if check.is_err() || !check.unwrap().status.success() {
-        eprintln!("Error: yt-dlp is not installed.");
-        eprintln!("Please install it: brew install yt-dlp");
-        std::process::exit(1);
-    }
-
-    let port = std::env::var("PORT")
-        .unwrap_or_else(|_| "8080".to_string());
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let addr = format!("0.0.0.0:{}", port);
+
+    // 创建服务实例
+    let state = AppState {
+        extractor: Arc::new(CaptionExtractor::with_client(HTTP_CLIENT.clone())),
+        downloader: Arc::new(CaptionDownloader::with_client(HTTP_CLIENT.clone())),
+    };
 
     let app = Router::new()
         .route("/transcript", post(transcript_handler))
+        .route("/format", get(format_handler))
+        .route("/info", get(info_handler))
+        .route("/formats", get(formats_handler))
         .route("/health", get(health_handler))
-        .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any))
+        .with_state(state)
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any),
+        )
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
@@ -293,7 +389,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-// 优雅关闭处理
 async fn shutdown_signal() {
     tokio::signal::ctrl_c()
         .await
