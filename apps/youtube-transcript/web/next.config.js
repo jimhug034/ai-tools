@@ -18,7 +18,7 @@ const nextConfig = {
     if (isServer) {
       config.externals = config.externals || [];
       config.externals.push({
-        "undici": "commonjs undici",
+        undici: "commonjs undici",
         "youtubei.js": "commonjs youtubei.js",
       });
     }

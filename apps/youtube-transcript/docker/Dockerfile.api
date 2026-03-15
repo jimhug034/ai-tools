@@ -1,0 +1,35 @@
+FROM rust:1.85-alpine AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache musl-dev
+
+# Copy manifest files
+COPY api/Cargo.toml api/Cargo.lock ./
+
+# Create a dummy main.rs to build dependencies
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build --release && \
+    rm -rf src
+
+# Copy the actual source code
+COPY api/src ./src
+
+# Build the application
+RUN cargo build --release && \
+    mv target/release/youtube-transcript /app/youtube-transcript
+
+# Runtime stage
+FROM alpine:3.19
+
+WORKDIR /app
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=builder /app/youtube-transcript /app/
+
+EXPOSE 8080
+
+CMD ["./youtube-transcript"]

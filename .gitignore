@@ -8,6 +8,7 @@ out
 dist
 build
 turbo
+target
 
 # Environment files
 .env

@@ -181,9 +181,7 @@ export default function HomePage() {
         {error && (
           <div className="mt-2 space-y-1">
             <p className="text-destructive text-sm">{error}</p>
-            {errorHint && (
-              <p className="text-muted-foreground text-xs max-w-2xl">{errorHint}</p>
-            )}
+            {errorHint && <p className="text-muted-foreground text-xs max-w-2xl">{errorHint}</p>}
           </div>
         )}
       </form>

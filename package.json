@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "turbo run dev --filter=@ai-tools/youtube-transcript-web",
+    "dev:api": "cd apps/youtube-transcript/api && cargo run",
+    "dev:all": "turbo run dev",
     "build": "turbo run build",
     "start": "turbo run start",
     "lint": "oxlint",

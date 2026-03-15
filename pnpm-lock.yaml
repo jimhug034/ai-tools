@@ -24,20 +24,20 @@ importers:
         specifier: ^5.0.0
         version: 5.9.3
 
-  apps/youtube-transcript:
+  apps/youtube-transcript/web:
     dependencies:
       '@ai-tools/api-clients':
         specifier: workspace:*
-        version: link:../../packages/api-clients
+        version: link:../../../packages/api-clients
       '@ai-tools/config':
         specifier: workspace:*
-        version: link:../../packages/config
+        version: link:../../../packages/config
       '@ai-tools/ui':
         specifier: workspace:*
-        version: link:../../packages/ui
+        version: link:../../../packages/ui
       '@ai-tools/utils':
         specifier: workspace:*
-        version: link:../../packages/utils
+        version: link:../../../packages/utils
       lucide-react:
         specifier: ^0.577.0
         version: 0.577.0(react@19.2.4)
@@ -2508,6 +2508,11 @@ packages:
     resolution: {integrity: sha512-i/Dv9Jcm68y9cggr1PhyUhOabBGP9+hzQPoiyOhKks7y9qrJl79A8XfG6LHekSuYc2VpiSu5wdnnrE1cj2nfTg==}
     cpu: [x64]
     os: [openbsd]
+
+  lefthook-windows-arm64@2.1.4:
+    resolution: {integrity: sha512-hSww7z+QX4YMnw2lK7DMrs3+w7NtxksuMKOkCKGyxUAC/0m1LAICo0ZbtdDtZ7agxRQQQ/SEbzFRhU5ysNcbjA==}
+    cpu: [arm64]
+    os: [win32]
 
   lefthook-windows-x64@2.1.4:
     resolution: {integrity: sha512-eE68LwnogxwcPgGsbVGPGxmghyMGmU9SdGwcc+uhGnUxPz1jL89oECMWJNc36zjVK24umNeDAzB5KA3lw1MuWw==}
@@ -5089,6 +5094,9 @@ snapshots:
   lefthook-openbsd-x64@2.1.4:
     optional: true
 
+  lefthook-windows-arm64@2.1.4:
+    optional: true
+
   lefthook-windows-x64@2.1.4:
     optional: true
 
@@ -5102,6 +5110,7 @@ snapshots:
       lefthook-linux-x64: 2.1.4
       lefthook-openbsd-arm64: 2.1.4
       lefthook-openbsd-x64: 2.1.4
+      lefthook-windows-arm64: 2.1.4
       lefthook-windows-x64: 2.1.4
 
   lilconfig@3.1.3: {}
