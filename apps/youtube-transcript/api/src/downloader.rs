@@ -59,8 +59,12 @@ impl CaptionDownloader {
             format!("{}?fmt=json3", track.base_url)
         };
 
+        eprintln!("Downloading caption from: {}", json_url);
+
         let response = self.client
             .get(&json_url)
+            .header("Cookie", "CONSENT=YES+cb")
+            .header("Accept-Language", "en-US,en;q=0.9")
             .send()
             .await
             .map_err(|e| YtError::DownloadFailed(e.to_string()))?;
@@ -78,23 +82,50 @@ impl CaptionDownloader {
             .await
             .map_err(|e| YtError::DownloadFailed(e.to_string()))?;
 
+        eprintln!("Response content-type: {}, length: {}", content_type, text.len());
+
+        // 如果返回的是 HTML，打印前 200 个字符用于调试
+        if content_type.contains("html") || text.contains("<!DOCTYPE") || text.contains("<html") {
+            eprintln!("HTML response (first 200 chars): {}", &text[..text.len().min(200)]);
+            return Err(YtError::DownloadFailed(
+                "字幕 URL 已过期，请重试".to_string()
+            ));
+        }
+
+        if text.is_empty() {
+            return Err(YtError::DownloadFailed(
+                "字幕内容为空".to_string()
+            ));
+        }
+
         if content_type.contains("json") || text.trim().starts_with('{') {
             self.parse_json3(&text)
         } else {
             // 尝试解析 XML 格式（备用）
+            eprintln!("Trying XML fallback parsing");
             self.parse_xml(&text)
         }
     }
 
     /// 解析 JSON3 格式字幕
     fn parse_json3(&self, content: &str) -> Result<SubtitleData> {
+        eprintln!("Parsing JSON3, content preview: {}...", &content[..content.len().min(200)]);
+
         let json: Json3Response = serde_json::from_str(content)
-            .map_err(|e| YtError::ParseError(format!("JSON3 解析失败: {}", e)))?;
+            .map_err(|e| {
+                eprintln!("JSON3 parse error: {}", e);
+                eprintln!("Content was: {}", &content[..content.len().min(500)]);
+                YtError::ParseError(format!("JSON3 解析失败: {}", e))
+            })?;
+
+        eprintln!("Found {} events in JSON3", json.events.len());
 
         let entries: Vec<SubtitleEntry> = json.events
             .into_iter()
             .filter_map(|event| self.parse_json3_event(event))
             .collect();
+
+        eprintln!("Parsed {} valid subtitle entries", entries.len());
 
         if entries.is_empty() {
             return Err(YtError::ParseError("JSON3 中没有有效的字幕条目".to_string()));

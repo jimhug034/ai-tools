@@ -88,6 +88,8 @@ impl CaptionExtractor {
     pub async fn extract_caption_tracks(&self, video_id: &str) -> Result<Vec<CaptionTrack>> {
         let url = format!("https://www.youtube.com/watch?v={}", video_id);
 
+        eprintln!("Fetching video page: {}", url);
+
         let html = self.client
             .get(&url)
             .send()
@@ -96,6 +98,8 @@ impl CaptionExtractor {
             .text()
             .await
             .map_err(|e| YtError::FetchFailed(e.to_string()))?;
+
+        eprintln!("Fetched HTML, length: {}", html.len());
 
         self.parse_caption_tracks(&html)
     }
@@ -226,9 +230,23 @@ impl Default for CaptionExtractor {
 
 /// 从 HTML 中提取 ytInitialData
 fn extract_yt_initial_data(html: &str) -> Option<String> {
-    // 搜索 ytInitialData = {...}
+    // YouTube 的 ytInitialData 是一个很大的 JSON 对象
+    // 使用非贪婪匹配可能会失败，尝试找到结束位置
+    let start_pattern = "ytInitialData = ";
+    let end_pattern = ";</script>";
+
+    if let Some(start) = html.find(start_pattern) {
+        let data_start = start + start_pattern.len();
+        if let Some(end) = html[data_start..].find(end_pattern) {
+            let data_str = &html[data_start..data_start + end];
+            eprintln!("Found ytInitialData, size: {} bytes", data_str.len());
+            return Some(data_str.to_string());
+        }
+    }
+
+    // 备用：尝试正则表达式（用于较小的数据）
     static INITIAL_DATA_RE: Lazy<Regex> = Lazy::new(|| {
-        Regex::new(r"ytInitialData\s*=\s*(\{.+?\});").unwrap()
+        Regex::new(r"ytInitialData\s*=\s*(\{.*?\});").unwrap()
     });
 
     if let Some(caps) = INITIAL_DATA_RE.captures(html) {
@@ -237,7 +255,7 @@ fn extract_yt_initial_data(html: &str) -> Option<String> {
 
     // 备用模式：var ytInitialData = {...}
     static VAR_INITIAL_DATA_RE: Lazy<Regex> = Lazy::new(|| {
-        Regex::new(r"var\s+ytInitialData\s*=\s*(\{.+?\});").unwrap()
+        Regex::new(r"var\s+ytInitialData\s*=\s*(\{.*?\});").unwrap()
     });
 
     VAR_INITIAL_DATA_RE.captures(html)

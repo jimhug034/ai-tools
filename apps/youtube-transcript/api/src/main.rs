@@ -26,7 +26,16 @@ use youtube_transcript::{
 static HTTP_CLIENT: Lazy<Client> = Lazy::new(|| {
     let mut builder = Client::builder()
         .timeout(Duration::from_secs(30))
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+        .default_headers({
+            let mut headers = reqwest::header::HeaderMap::new();
+            headers.insert("Accept-Language", reqwest::header::HeaderValue::from_static("en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7"));
+            headers.insert("Accept", reqwest::header::HeaderValue::from_static("*/*"));
+            headers.insert("Sec-Fetch-Site", reqwest::header::HeaderValue::from_static("same-origin"));
+            headers.insert("Sec-Fetch-Mode", reqwest::header::HeaderValue::from_static("cors"));
+            headers.insert("Sec-Fetch-Dest", reqwest::header::HeaderValue::from_static("empty"));
+            headers
+        });
 
     // 配置代理
     if let Ok(proxy) = std::env::var("HTTPS_PROXY") {
@@ -150,36 +159,68 @@ async fn transcript_handler(
             details: Some("Could not extract video ID".to_string()),
         })?;
 
-    // 获取字幕轨道
-    let tracks = state.extractor
-        .extract_caption_tracks(&video_id)
-        .await
-        .map_err(map_yt_error)?;
+    // 获取字幕轨道并立即下载（避免签名过期）
+    // 最多重试 3 次，因为字幕 URL 签名可能过期
+    let mut subtitle_data = None;
+    let mut last_error = None;
 
-    // 优先选择非自动字幕，然后是英文，最后是第一个可用字幕
-    let track = tracks
-        .iter()
-        .filter(|t| t.kind == CaptionKind::Manual)
-        .find(|t| t.language_code == "en" || t.language_code.starts_with("en-"))
-        .or_else(|| tracks.iter().find(|t| t.kind == CaptionKind::Manual))
-        .or_else(|| tracks.iter().find(|t| t.language_code == "en" || t.language_code.starts_with("en-")))
-        .or_else(|| tracks.first())
-        .ok_or_else(|| ErrorResponse {
-            error: "No captions found".to_string(),
-            details: None,
-        })?;
+    for attempt in 1..=3 {
+        let tracks = state.extractor
+            .extract_caption_tracks(&video_id)
+            .await
+            .map_err(map_yt_error)?;
 
-    eprintln!(
-        "Using caption track: {} ({})",
-        track.name.as_ref().unwrap_or(&track.language_code),
-        track.language_code
-    );
+        if tracks.is_empty() {
+            return Err(ErrorResponse {
+                error: "No captions found".to_string(),
+                details: Some("This video has no available captions".to_string()),
+            });
+        }
 
-    // 下载字幕
-    let subtitle_data = state.downloader
-        .download(track)
-        .await
-        .map_err(map_yt_error)?;
+        // 优先选择非自动字幕，然后是英文，最后是第一个可用字幕
+        let track = tracks
+            .iter()
+            .filter(|t| t.kind == CaptionKind::Manual)
+            .find(|t| t.language_code == "en" || t.language_code.starts_with("en-"))
+            .or_else(|| tracks.iter().find(|t| t.kind == CaptionKind::Manual))
+            .or_else(|| tracks.iter().find(|t| t.language_code == "en" || t.language_code.starts_with("en-")))
+            .or_else(|| tracks.first())
+            .ok_or_else(|| ErrorResponse {
+                error: "No captions found".to_string(),
+                details: None,
+            })?;
+
+        eprintln!(
+            "Attempt {}: Using caption track: {} ({})",
+            attempt,
+            track.name.as_ref().unwrap_or(&track.language_code),
+            track.language_code
+        );
+
+        // 下载字幕
+        match state.downloader.download(track).await {
+            Ok(data) => {
+                subtitle_data = Some(data);
+                break;
+            }
+            Err(e) => {
+                let error_msg = e.to_string();
+                eprintln!("Download attempt {} failed: {}", attempt, error_msg);
+                last_error = Some(e);
+                // 如果不是 URL 过期错误，直接返回
+                if !error_msg.contains("过期") && !error_msg.contains("内容为空") {
+                    break;
+                }
+            }
+        }
+    }
+
+    let subtitle_data = subtitle_data.ok_or_else(|| {
+        last_error.map(map_yt_error).unwrap_or_else(|| ErrorResponse {
+            error: "Failed to fetch transcript".to_string(),
+            details: Some("All download attempts failed".to_string()),
+        })
+    })?;
 
     // 转换为 API 格式
     let items = subtitle_data

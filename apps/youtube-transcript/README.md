@@ -36,6 +36,7 @@ cd apps/youtube-transcript
 ```
 
 这将同时启动：
+
 - Rust API 服务 → `http://localhost:8080`
 - Next.js 前端 → `http://localhost:3000`
 
