@@ -37,13 +37,13 @@ cd apps/youtube-transcript/api && cargo run
 
 #### API 端点
 
-| 端点 | 方法 | 描述 |
-|------|------|------|
-| `/transcript` | POST | 获取视频字幕（JSON 格式） |
-| `/format` | GET | 获取指定格式的字幕（srt, vtt, ass, txt, lrc） |
-| `/info` | GET | 获取视频信息和可用字幕列表 |
-| `/formats` | GET | 获取支持的格式列表 |
-| `/health` | GET | 健康检查 |
+| 端点          | 方法 | 描述                                          |
+| ------------- | ---- | --------------------------------------------- |
+| `/transcript` | POST | 获取视频字幕（JSON 格式）                     |
+| `/format`     | GET  | 获取指定格式的字幕（srt, vtt, ass, txt, lrc） |
+| `/info`       | GET  | 获取视频信息和可用字幕列表                    |
+| `/formats`    | GET  | 获取支持的格式列表                            |
+| `/health`     | GET  | 健康检查                                      |
 
 ### 2. 启动 Next.js 开发服务器
 
