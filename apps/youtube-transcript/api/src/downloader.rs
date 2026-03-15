@@ -5,10 +5,16 @@
 
 use crate::error::{Result, YtError};
 use crate::types::{SubtitleData, SubtitleEntry, CaptionTrack};
+use once_cell::sync::Lazy;
 use reqwest::Client;
 use scraper::{Html, Selector};
 use serde::Deserialize;
 use regex::Regex;
+
+/// P 标签格式的正则表达式（预编译）
+static P_TAG_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r#"<p\s+t="(\d+)"\s+d="(\d+)"[^>]*>([\s\S]*?)</p>"#).unwrap()
+});
 
 /// JSON3 格式字幕响应
 #[derive(Debug, Deserialize)]
@@ -110,8 +116,6 @@ impl CaptionDownloader {
 
     /// 重建 URL 并下载（当原 URL 过期时）
     async fn download_with_rebuilt_url(&self, track: &CaptionTrack) -> Result<SubtitleData> {
-        use regex::Regex;
-
         // 从 base_url 中提取视频 ID
         let url = &track.base_url;
 
@@ -312,12 +316,8 @@ impl CaptionDownloader {
 
     /// 解析 <p t="..." d="..."> 格式的字幕（youtubei.js 格式）
     fn parse_p_tag_format(&self, content: &str) -> Vec<SubtitleEntry> {
-        use regex::Regex;
-
-        // 匹配 <p t="开始时间(ms)" d="持续时间(ms)">文本</p>
-        let p_re = Regex::new(r#"<p\s+t="(\d+)"\s+d="(\d+)"[^>]*>([\s\S]*?)</p>"#).unwrap();
-
-        p_re.captures_iter(content)
+        // 使用预编译的正则表达式
+        P_TAG_RE.captures_iter(content)
             .filter_map(|caps| {
                 let start_ms: i64 = caps.get(1).and_then(|m| m.as_str().parse().ok())?;
                 let duration_ms: i64 = caps.get(2).and_then(|m| m.as_str().parse().ok())?;

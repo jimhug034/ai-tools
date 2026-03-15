@@ -3,10 +3,22 @@
 //! 参考 yt-dlp 实现，使用 YouTube 的 innertube API 获取字幕信息
 
 use crate::error::{Result, YtError};
+use once_cell::sync::Lazy;
 use regex::Regex;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::borrow::Cow;
+
+/// API key 正则表达式（预编译，避免重复编译）
+static API_KEY_PATTERNS: Lazy<[Regex; 3]> = Lazy::new(|| [
+    Regex::new(r#""INNERTUBE_API_KEY"\s*:\s*"([^"]+)""#).unwrap(),
+    Regex::new(r#"innertubeApiKey"\s*:\s*"([^"]+)""#).unwrap(),
+    Regex::new(r#"apiKey"\s*:\s*"([^"]+)""#).unwrap(),
+]);
+
+/// 默认 innertube API key
+const DEFAULT_API_KEY: &str = "AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8";
 
 /// Innertube API 客户端
 pub struct InnertubeClient {
@@ -32,22 +44,15 @@ impl InnertubeClient {
 
     /// 从 HTML 页面提取 innertube API key
     pub fn extract_api_key(&self, html: &str) -> Result<String> {
-        // 尝试从多个位置提取 API key
-        let patterns = [
-            r#""INNERTUBE_API_KEY"\s*:\s*"([^"]+)""#,
-            r#"innertubeApiKey"\s*:\s*"([^"]+)""#,
-            r#"apiKey"\s*:\s*"([^"]+)""#,
-        ];
-
-        for pattern in &patterns {
-            let re = Regex::new(pattern).unwrap();
+        // 尝试从多个位置提取 API key（使用预编译的正则）
+        for re in API_KEY_PATTERNS.iter() {
             if let Some(caps) = re.captures(html) {
                 return Ok(caps[1].to_string());
             }
         }
 
         // 使用默认的 innertube API key
-        Ok("AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8".to_string())
+        Ok(DEFAULT_API_KEY.to_string())
     }
 
     /// 获取播放器信息（包含字幕信息）
@@ -342,7 +347,26 @@ impl NameText {
     pub fn get_text(&self) -> String {
         match self {
             NameText::Simple(s) => s.simple_text.clone(),
-            NameText::Runs(r) => r.runs.iter().map(|run| run.text.clone()).collect::<Vec<_>>().join(""),
+            NameText::Runs(r) => {
+                // 预计算容量以避免重新分配
+                let total_len: usize = r.runs.iter().map(|run| run.text.len()).sum();
+                let mut result = String::with_capacity(total_len);
+                for (i, run) in r.runs.iter().enumerate() {
+                    if i > 0 {
+                        result.push(' ');
+                    }
+                    result.push_str(&run.text);
+                }
+                result
+            }
+        }
+    }
+
+    /// 获取文本内容的引用（避免分配）
+    pub fn as_text(&self) -> Cow<'_, str> {
+        match self {
+            NameText::Simple(s) => Cow::Borrowed(&s.simple_text),
+            NameText::Runs(_) => Cow::Owned(self.get_text()),
         }
     }
 }
