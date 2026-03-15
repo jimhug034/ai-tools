@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "turbo run dev --filter=@ai-tools/youtube-transcript-web",
     "dev:api": "cd apps/youtube-transcript/api && cargo run",
+    "dev:yt": "apps/youtube-transcript/start.sh",
     "dev:all": "turbo run dev",
     "build": "turbo run build",
     "start": "turbo run start",

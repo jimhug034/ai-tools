@@ -24,16 +24,38 @@ youtube-transcript/
 
 ## Development
 
-### 1. 启动 Rust 字幕服务（必需）
+### 一键启动所有服务
 
 ```bash
-# 启动 Rust 服务
+# 从项目根目录
+pnpm dev:yt
+
+# 或直接运行脚本
+cd apps/youtube-transcript
+./start.sh
+```
+
+这将同时启动：
+- Rust API 服务 → `http://localhost:8080`
+- Next.js 前端 → `http://localhost:3000`
+
+### 单独启动服务
+
+#### 启动 Rust API
+
+```bash
 pnpm dev:api
 # 或
 cd apps/youtube-transcript/api && cargo run
 ```
 
-服务将在 `http://localhost:8080` 运行。
+#### 启动 Next.js 前端
+
+```bash
+pnpm dev
+# 或
+pnpm --filter @ai-tools/youtube-transcript-web dev
+```
 
 #### API 端点
 
