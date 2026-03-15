@@ -49,8 +49,7 @@ export async function POST(request: NextRequest) {
     // 检查是否是 Rust 服务连接错误
     const isServiceError =
       error instanceof Error &&
-      (error.message.includes("ECONNREFUSED") ||
-        error.message.includes("fetch failed"));
+      (error.message.includes("ECONNREFUSED") || error.message.includes("fetch failed"));
 
     const hint = isServiceError
       ? `无法连接到 Rust 字幕服务 (${RUST_SERVICE_URL})。请先启动服务：\ncd services/youtube-transcript-rs\ncargo run`

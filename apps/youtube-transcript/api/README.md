@@ -28,6 +28,7 @@ cargo build --release
 获取 YouTube 视频字幕。
 
 **请求：**
+
 ```json
 {
   "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
@@ -35,6 +36,7 @@ cargo build --release
 ```
 
 **响应：**
+
 ```json
 {
   "videoId": "dQw4w9WgXcQ",
@@ -53,6 +55,7 @@ cargo build --release
 健康检查。
 
 **响应：**
+
 ```json
 {
   "status": "healthy",
@@ -63,6 +66,7 @@ cargo build --release
 ## 代理支持
 
 服务会自动读取环境变量：
+
 - `HTTPS_PROXY` 或 `HTTP_PROXY` - 代理地址
 
 ```bash
@@ -74,9 +78,9 @@ HTTPS_PROXY=http://127.0.0.1:7890 cargo run
 修改 `apps/youtube-transcript/src/app/api/transcript/route.ts`：
 
 ```typescript
-const response = await fetch('http://localhost:8080/transcript', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ url })
+const response = await fetch("http://localhost:8080/transcript", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ url }),
 });
 ```
