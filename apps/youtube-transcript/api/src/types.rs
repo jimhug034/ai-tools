@@ -70,7 +70,7 @@ impl SubtitleFormat {
         }
     }
 
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn parse(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "srt" => Some(SubtitleFormat::Srt),
             "vtt" | "webvtt" => Some(SubtitleFormat::Vtt),
@@ -117,22 +117,26 @@ pub struct SubtitleData {
 
 /// YouTube Inner API 响应结构
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub(crate) struct YouTubePlayerResponse {
     #[serde(rename = "captions")]
     pub captions_data: Option<CaptionsData>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code, non_snake_case)]
 pub(crate) struct CaptionsData {
     pub playerCaptionsTracklistRenderer: Option<CaptionsTracklistRenderer>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub(crate) struct CaptionsTracklistRenderer {
     pub caption_tracks: Option<Vec<CaptionTrackRaw>>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub(crate) struct CaptionTrackRaw {
     #[serde(rename = "baseUrl")]
     pub base_url: String,
@@ -144,6 +148,7 @@ pub(crate) struct CaptionTrackRaw {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub(crate) struct NameSimpleText {
     pub simple_text: String,
 }
@@ -167,11 +172,13 @@ impl From<CaptionTrackRaw> for CaptionTrack {
 
 /// JSON3 格式字幕响应
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub(crate) struct Json3Response {
     pub events: Vec<Json3Event>,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub(crate) struct Json3Event {
     #[serde(rename = "tStartMs")]
     pub start_ms: i64,
@@ -181,6 +188,7 @@ pub(crate) struct Json3Event {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub(crate) struct Json3Segment {
     pub utf8: Option<String>,
 }

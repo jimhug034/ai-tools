@@ -5,3 +5,11 @@ pre-commit:
       run: pnpm format:fix
     lint:
       run: pnpm lint:fix
+    rust-test:
+      run: cargo test --quiet
+      root: "apps/youtube-transcript/api"
+      glob: "apps/youtube-transcript/api/**/*.rs"
+    rust-clippy:
+      run: cargo clippy --quiet -- -D warnings
+      root: "apps/youtube-transcript/api"
+      glob: "apps/youtube-transcript/api/**/*.rs"

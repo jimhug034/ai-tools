@@ -106,17 +106,20 @@ impl SubtitleConverter {
         output.push_str("WrapStyle: 0\n");
         output.push_str("PlayResX: 1280\n");
         output.push_str("PlayResY: 720\n");
-        output.push_str("\n");
+        output.push('\n');
         output.push_str("[V4+ Styles]\n");
         output.push_str("Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\n");
         output.push_str("Style: Default,Arial,16,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,2,10,10,10,1\n");
-        output.push_str("\n");
+        output.push('\n');
         output.push_str("[Events]\n");
-        output.push_str("Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n");
+        output.push_str(
+            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\n",
+        );
 
         for entry in &data.entries {
             // ASS 需要转义特殊字符
-            let text = entry.text
+            let text = entry
+                .text
                 .replace('\\', "\\\\")
                 .replace('{', "\\{")
                 .replace('}', "\\}")
@@ -135,15 +138,15 @@ impl SubtitleConverter {
 
     /// 转换为纯文本格式
     pub fn to_txt(data: &SubtitleData) -> Result<String> {
-        let texts: Vec<&str> = data.entries.iter()
-            .map(|e| e.text.as_str())
-            .collect();
+        let texts: Vec<&str> = data.entries.iter().map(|e| e.text.as_str()).collect();
         Ok(texts.join("\n\n"))
     }
 
     /// 转换为 JSON3 格式
     pub fn to_json3(data: &SubtitleData) -> Result<String> {
-        let json_events: Vec<serde_json::Value> = data.entries.iter()
+        let json_events: Vec<serde_json::Value> = data
+            .entries
+            .iter()
             .map(|entry| {
                 serde_json::json!({
                     "tStartMs": entry.start_ms,
@@ -193,7 +196,10 @@ impl SubtitleConverter {
         let minutes = (ms % 3600000) / 60000;
         let seconds = (ms % 60000) / 1000;
         let milliseconds = ms % 1000;
-        format!("{:02}:{:02}:{:02},{:03}", hours, minutes, seconds, milliseconds)
+        format!(
+            "{:02}:{:02}:{:02},{:03}",
+            hours, minutes, seconds, milliseconds
+        )
     }
 
     /// 格式化 VTT 时间: 00:00:00.000
@@ -202,7 +208,10 @@ impl SubtitleConverter {
         let minutes = (ms % 3600000) / 60000;
         let seconds = (ms % 60000) / 1000;
         let milliseconds = ms % 1000;
-        format!("{:02}:{:02}:{:02}.{:03}", hours, minutes, seconds, milliseconds)
+        format!(
+            "{:02}:{:02}:{:02}.{:03}",
+            hours, minutes, seconds, milliseconds
+        )
     }
 
     /// 格式化 ASS 时间: 0:00:00.00
@@ -251,13 +260,11 @@ mod tests {
     #[test]
     fn test_to_vtt() {
         let data = SubtitleData {
-            entries: vec![
-                SubtitleEntry {
-                    text: "Hello World".to_string(),
-                    start_ms: 0,
-                    duration_ms: 3000,
-                },
-            ],
+            entries: vec![SubtitleEntry {
+                text: "Hello World".to_string(),
+                start_ms: 0,
+                duration_ms: 3000,
+            }],
         };
 
         let vtt = SubtitleConverter::to_vtt(&data).unwrap();
@@ -268,13 +275,11 @@ mod tests {
     #[test]
     fn test_to_lrc() {
         let data = SubtitleData {
-            entries: vec![
-                SubtitleEntry {
-                    text: "First line".to_string(),
-                    start_ms: 1500,
-                    duration_ms: 3000,
-                },
-            ],
+            entries: vec![SubtitleEntry {
+                text: "First line".to_string(),
+                start_ms: 1500,
+                duration_ms: 3000,
+            }],
         };
 
         let lrc = SubtitleConverter::to_lrc(&data).unwrap();

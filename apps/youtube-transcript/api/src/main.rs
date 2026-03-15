@@ -213,7 +213,7 @@ async fn format_handler(
         });
     }
 
-    let format = SubtitleFormat::from_str(&req.format).ok_or_else(|| ErrorResponse {
+    let format = SubtitleFormat::parse(&req.format).ok_or_else(|| ErrorResponse {
         error: "Invalid format".to_string(),
         details: Some(format!(
             "Unsupported format: {}. Supported: srt, vtt, ass, txt, lrc",
