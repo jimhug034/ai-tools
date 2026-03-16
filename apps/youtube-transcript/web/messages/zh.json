@@ -1,10 +1,10 @@
 {
   "meta": {
-    "title": "YouTube 视频转录工具",
-    "description": "即时生成准确的视频转录，AI 驱动的智能摘要和翻译。"
+    "title": "YouTube 字幕",
+    "description": "即时提取、翻译和总结视频字幕。"
   },
   "header": {
-    "title": "YouTube 视频转录工具",
+    "title": "YouTube 字幕",
     "languageSwitch": "语言"
   },
   "input": {

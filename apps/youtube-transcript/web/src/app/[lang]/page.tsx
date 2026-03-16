@@ -145,9 +145,11 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8">
-      <div className="text-center space-y-4">
-        <h2 className="text-3xl font-bold">{t("header.title")}</h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">{t("meta.description")}</p>
+      <div className="space-y-2">
+        <h1 className="text-4xl font-semibold tracking-tight">{t("header.title")}</h1>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-lg">
+          {t("meta.description")}
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto">
