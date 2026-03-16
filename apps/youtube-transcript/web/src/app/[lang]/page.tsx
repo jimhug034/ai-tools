@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Youtube, FileText, Sparkles, Languages, Copy, Download, Loader2 } from "lucide-react";
+import { FileText, Sparkles, Languages, Copy, Download, Loader2 } from "lucide-react";
 import { Button } from "@ai-tools/ui";
 import { Input } from "@ai-tools/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@ai-tools/ui";
@@ -152,38 +152,30 @@ export default function HomePage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Youtube className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="url"
-              placeholder={t("input.placeholder")}
-              value={url}
-              onChange={(e) => {
-                setUrl(e.target.value);
-                setError("");
-                setErrorHint("");
-              }}
-              className="pl-10"
-              disabled={loading}
-            />
-          </div>
+          <Input
+            type="url"
+            placeholder={t("input.placeholder")}
+            value={url}
+            onChange={(e) => {
+              setUrl(e.target.value);
+              setError("");
+              setErrorHint("");
+            }}
+            disabled={loading}
+            className="flex-1"
+          />
           <Button type="submit" disabled={loading || !url}>
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t("input.validating")}
-              </>
-            ) : (
-              t("input.button")
-            )}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("input.button")}
           </Button>
         </div>
         {error && (
-          <div className="mt-2 space-y-1">
-            <p className="text-destructive text-sm">{error}</p>
-            {errorHint && <p className="text-muted-foreground text-xs max-w-2xl">{errorHint}</p>}
+          <div className="space-y-1">
+            <p className="text-red-500 text-sm" role="alert">
+              {error}
+            </p>
+            {errorHint && <p className="text-neutral-500 text-xs">{errorHint}</p>}
           </div>
         )}
       </form>
