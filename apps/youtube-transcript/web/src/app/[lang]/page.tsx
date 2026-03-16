@@ -159,34 +159,48 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8 animate-in">
-      <div className="space-y-2">
-        <h1 className="text-4xl font-semibold tracking-tight">{t("header.title")}</h1>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-lg">
+      {/* Hero Section - Centered */}
+      <div className="text-center space-y-6 py-8">
+        <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-400 bg-clip-text text-transparent">
+          {t("header.title")}
+        </h1>
+        <p className="text-base text-neutral-600 dark:text-neutral-400 max-w-xl mx-auto leading-relaxed">
           {t("meta.description")}
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3 animate-in delay-100">
-        <div className="flex gap-2">
-          <Input
-            type="url"
-            placeholder={t("input.placeholder")}
-            value={url}
-            onChange={(e) => {
-              setUrl(e.target.value);
-              setError("");
-              setErrorHint("");
-            }}
-            disabled={loading}
-            className="flex-1"
-          />
-          <Button type="submit" disabled={loading || !url}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("input.button")}
-          </Button>
+      {/* Input Section - Centered with beautiful styling */}
+      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto animate-in delay-100">
+        <div className="relative group">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl opacity-20 group-hover:opacity-40 transition-opacity blur"></div>
+          <div className="relative flex items-center gap-2 bg-white dark:bg-neutral-900 rounded-xl p-1.5 shadow-xl shadow-neutral-200/50 dark:shadow-black/50 border border-neutral-200 dark:border-neutral-800">
+            <div className="relative flex-1">
+              <Input
+                type="url"
+                placeholder={t("input.placeholder")}
+                value={url}
+                onChange={(e) => {
+                  setUrl(e.target.value);
+                  setError("");
+                  setErrorHint("");
+                }}
+                disabled={loading}
+                className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent text-base h-12 px-4"
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={loading || !url}
+              size="lg"
+              className="h-12 px-8 rounded-lg font-medium shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
+            >
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : t("input.button")}
+            </Button>
+          </div>
         </div>
         {error && (
-          <div className="space-y-1">
-            <p className="text-red-500 text-sm" role="alert">
+          <div className="mt-4 space-y-1 text-center">
+            <p className="text-red-500 text-sm font-medium" role="alert">
               {error}
             </p>
             {errorHint && <p className="text-neutral-500 text-xs">{errorHint}</p>}
