@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Copy, Check, Loader2, Download, FileText } from "lucide-react";
+import { Copy, Check, Loader2, Download, FileText, RotateCcw, AlertCircle } from "lucide-react";
 import { Button } from "@ai-tools/ui";
 import { Input } from "@ai-tools/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@ai-tools/ui";
@@ -33,6 +33,7 @@ export default function HomePage() {
   const [translationError, setTranslationError] = useState("");
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,25 +127,54 @@ export default function HomePage() {
   };
 
   const handleCopy = async (id: string, text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+    // Don't attempt to copy empty text
+    if (!text || text.trim().length === 0) {
+      setCopyError("Nothing to copy");
+      setTimeout(() => setCopyError(null), 2000);
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setCopyError(null);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      setCopyError("Failed to copy. Please try again.");
+      setTimeout(() => setCopyError(null), 3000);
+    }
   };
 
   const handleExportTxt = () => {
+    // Guard against empty transcript
+    if (!transcript || transcript.length === 0) {
+      return;
+    }
+
     const text = transcript
       .map((item) => `[${formatTimestamp(item.offset)}] ${item.text}`)
       .join("\n");
+
+    // Guard against empty text
+    if (!text || text.trim().length === 0) {
+      return;
+    }
+
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "transcript.txt";
+    a.download = `transcript-${new Date().toISOString().split("T")[0]}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const handleExportSrt = () => {
+    // Guard against empty transcript
+    if (!transcript || transcript.length === 0) {
+      return;
+    }
+
     let srtIndex = 1;
     const srt = transcript
       .map((item) => {
@@ -154,11 +184,16 @@ export default function HomePage() {
       })
       .join("\n");
 
+    // Guard against empty text
+    if (!srt || srt.trim().length === 0) {
+      return;
+    }
+
     const blob = new Blob([srt], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "transcript.srt";
+    a.download = `transcript-${new Date().toISOString().split("T")[0]}.srt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -182,36 +217,61 @@ export default function HomePage() {
         <div className="relative group">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-accent rounded-xl opacity-20 group-hover:opacity-40 transition-opacity blur"></div>
           <div className="relative flex items-center gap-2 bg-white dark:bg-neutral-900 rounded-xl p-1.5 shadow-xl shadow-neutral-200/50 dark:shadow-black/50 border border-neutral-200 dark:border-neutral-800">
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-0">
               <Input
                 type="url"
                 placeholder={t("input.placeholder")}
                 value={url}
                 onChange={(e) => {
-                  setUrl(e.target.value);
-                  setError("");
-                  setErrorHint("");
+                  // Limit URL length to prevent overflow
+                  const value = e.target.value;
+                  if (value.length <= 500) {
+                    setUrl(value);
+                    setError("");
+                    setErrorHint("");
+                  }
                 }}
                 disabled={loading}
+                maxLength={500}
                 className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent text-base h-12 px-4"
+                aria-describedby={error ? "url-error" : undefined}
               />
             </div>
             <Button
               type="submit"
-              disabled={loading || !url}
+              disabled={loading || !url.trim()}
               size="lg"
               className="h-12 px-8 rounded-lg font-medium shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all"
+              aria-busy={loading}
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : t("input.button")}
             </Button>
           </div>
         </div>
         {error && (
-          <div className="mt-4 space-y-1 text-center">
-            <p className="text-red-500 text-sm font-medium" role="alert">
-              {error}
+          <div className="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-950/10 border border-red-200 dark:border-red-800/50">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p
+                  id="url-error"
+                  className="text-red-700 dark:text-red-300 text-sm font-medium"
+                  role="alert"
+                >
+                  {error}
+                </p>
+                {errorHint && (
+                  <p className="text-red-600/70 dark:text-red-400/70 text-xs mt-1">{errorHint}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        {copyError && (
+          <div className="mt-4 p-2 rounded-lg bg-neutral-100 dark:bg-neutral-800">
+            <p className="text-neutral-600 dark:text-neutral-400 text-xs text-center">
+              {copyError}
             </p>
-            {errorHint && <p className="text-neutral-500 text-xs">{errorHint}</p>}
           </div>
         )}
       </form>
@@ -288,21 +348,27 @@ export default function HomePage() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
-                {transcript.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex gap-3 px-5 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors border-b border-neutral-100 dark:border-neutral-800/50 last:border-0 group"
-                  >
-                    <span className="text-xs text-neutral-400 dark:text-neutral-500 font-mono shrink-0 tabular-nums">
-                      {formatTimestamp(item.offset)}
-                    </span>
-                    <span className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
-                      {item.text}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              {transcript.length === 0 ? (
+                <div className="p-8 text-center text-neutral-500 dark:text-neutral-400">
+                  <p>No transcript available</p>
+                </div>
+              ) : (
+                <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
+                  {transcript.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex gap-3 px-5 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors border-b border-neutral-100 dark:border-neutral-800/50 last:border-0 group"
+                    >
+                      <span className="text-xs text-neutral-400 dark:text-neutral-500 font-mono shrink-0 tabular-nums self-start">
+                        {formatTimestamp(item.offset)}
+                      </span>
+                      <span className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed break-words">
+                        {item.text || <span className="italic text-neutral-400">[empty]</span>}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -337,9 +403,24 @@ export default function HomePage() {
                     )}
                   </Button>
                   {summaryError && (
-                    <p className="text-red-500 text-sm text-center" role="alert">
-                      {summaryError}
-                    </p>
+                    <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/10 border border-red-200 dark:border-red-800/50">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-red-700 dark:text-red-300 text-sm" role="alert">
+                            {summaryError}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleGenerateSummary}
+                          className="shrink-0"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </>
               ) : (
@@ -349,6 +430,7 @@ export default function HomePage() {
                     onChange={(e) => setSummary(e.target.value)}
                     rows={8}
                     className="resize-none"
+                    placeholder="Summary will appear here..."
                   />
                   <div className="flex justify-between items-center">
                     <Button
@@ -397,7 +479,11 @@ export default function HomePage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 pt-4">
-              <Select value={targetLang} onValueChange={(value) => setTargetLang(value as string)}>
+              <Select
+                value={targetLang}
+                onValueChange={(value) => setTargetLang(value as string)}
+                disabled={isTranslating}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder={t("translation.selectLanguage")} />
                 </SelectTrigger>
@@ -424,9 +510,24 @@ export default function HomePage() {
                     )}
                   </Button>
                   {translationError && (
-                    <p className="text-red-500 text-sm text-center" role="alert">
-                      {translationError}
-                    </p>
+                    <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/10 border border-red-200 dark:border-red-800/50">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400 shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-red-700 dark:text-red-300 text-sm" role="alert">
+                            {translationError}
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleTranslate}
+                          className="shrink-0"
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </>
               ) : (
@@ -436,6 +537,7 @@ export default function HomePage() {
                     onChange={(e) => setTranslation(e.target.value)}
                     rows={6}
                     className="resize-none"
+                    placeholder="Translation will appear here..."
                   />
                   <div className="flex justify-between items-center">
                     <Button
