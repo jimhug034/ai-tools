@@ -17,6 +17,7 @@
     --secondary-foreground: 0 0% 4%;
     --muted: 210 40% 96%;
     --muted-foreground: 0 0% 45%; /* Neutral 500 */
+    /* Accent - Violet */
     --accent: 258 90% 66%; /* #8B5CF6 Violet 500 */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
