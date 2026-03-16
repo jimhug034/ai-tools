@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { FileText, Sparkles, Languages, Copy, Download, Loader2 } from "lucide-react";
+import { Sparkles, Languages, Copy, Check, Loader2 } from "lucide-react";
 import { Button } from "@ai-tools/ui";
 import { Input } from "@ai-tools/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@ai-tools/ui";
@@ -26,7 +26,7 @@ export default function HomePage() {
   const [summary, setSummary] = useState("");
   const [translation, setTranslation] = useState("");
   const [targetLang, setTargetLang] = useState("zh");
-  const [copied, setCopied] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,10 +103,10 @@ export default function HomePage() {
     setTranslation(data.translation);
   };
 
-  const handleCopy = async (text: string) => {
+  const handleCopy = async (id: string, text: string) => {
     await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handleExportTxt = () => {
@@ -182,23 +182,23 @@ export default function HomePage() {
 
       {transcript.length > 0 && (
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                {t("transcript.title")} ({transcript.length} lines)
+              <CardTitle className="text-lg">
+                {t("transcript.title")} <span className="text-neutral-500">({transcript.length})</span>
               </CardTitle>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleCopy(transcriptText)}>
-                  <Copy className="h-4 w-4 mr-1" />
-                  {copied ? "Copied!" : t("transcript.copy")}
+                <Button variant="outline" size="sm" onClick={() => handleCopy("transcript", transcriptText)}>
+                  {copiedId === "transcript" ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleExportTxt}>
-                  <Download className="h-4 w-4 mr-1" />
                   TXT
                 </Button>
                 <Button variant="outline" size="sm" onClick={handleExportSrt}>
-                  <Download className="h-4 w-4 mr-1" />
                   SRT
                 </Button>
               </div>
@@ -223,17 +223,15 @@ export default function HomePage() {
       )}
 
       {transcript.length > 0 && (
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                {t("summary.title")}
-              </CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">{t("summary.title")}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               {!summary ? (
                 <Button onClick={handleGenerateSummary} className="w-full">
+                  <Sparkles className="h-4 w-4 mr-2" />
                   {t("summary.button")}
                 </Button>
               ) : (
@@ -241,26 +239,28 @@ export default function HomePage() {
                   <Textarea
                     value={summary}
                     onChange={(e) => setSummary(e.target.value)}
-                    rows={8}
+                    rows={6}
                     className="resize-none"
                   />
-                  <Button variant="outline" onClick={() => handleCopy(summary)}>
-                    <Copy className="h-4 w-4 mr-1" />
-                    {copied ? "Copied!" : t("summary.copy")}
-                  </Button>
+                  <div className="flex justify-end">
+                    <Button variant="outline" size="sm" onClick={() => handleCopy("summary", summary)}>
+                      {copiedId === "summary" ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </>
               )}
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Languages className="h-5 w-5" />
-                {t("translation.title")}
-              </CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">{t("translation.title")}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3">
               <Select value={targetLang} onValueChange={(value) => setTargetLang(value as string)}>
                 <SelectTrigger>
                   <SelectValue placeholder={t("translation.selectLanguage")} />
@@ -277,6 +277,7 @@ export default function HomePage() {
               </Select>
               {!translation ? (
                 <Button onClick={handleTranslate} className="w-full">
+                  <Languages className="h-4 w-4 mr-2" />
                   {t("translation.button")}
                 </Button>
               ) : (
@@ -284,13 +285,18 @@ export default function HomePage() {
                   <Textarea
                     value={translation}
                     onChange={(e) => setTranslation(e.target.value)}
-                    rows={8}
+                    rows={6}
                     className="resize-none"
                   />
-                  <Button variant="outline" onClick={() => handleCopy(translation)}>
-                    <Copy className="h-4 w-4 mr-1" />
-                    {copied ? "Copied!" : t("translation.copy")}
-                  </Button>
+                  <div className="flex justify-end">
+                    <Button variant="outline" size="sm" onClick={() => handleCopy("translation", translation)}>
+                      {copiedId === "translation" ? (
+                        <Check className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </>
               )}
             </CardContent>
