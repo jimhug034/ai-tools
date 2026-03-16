@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Sparkles, Languages, Copy, Check, Loader2 } from "lucide-react";
+import { Copy, Check, Loader2 } from "lucide-react";
 import { Button } from "@ai-tools/ui";
 import { Input } from "@ai-tools/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@ai-tools/ui";
@@ -10,6 +10,7 @@ import { Textarea } from "@ai-tools/ui";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ai-tools/ui";
 import { Skeleton } from "@ai-tools/ui";
 import { extractVideoId, formatTimestamp, formatSrtTime } from "@ai-tools/utils";
+import { EmptyState } from "@/components/empty-state";
 
 export interface TranscriptItem {
   text: string;
@@ -28,6 +29,8 @@ export default function HomePage() {
   const [translation, setTranslation] = useState("");
   const [targetLang, setTargetLang] = useState("zh");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [summaryError, setSummaryError] = useState("");
+  const [translationError, setTranslationError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,37 +74,47 @@ export default function HomePage() {
   };
 
   const handleGenerateSummary = async () => {
-    const transcriptText = transcript.map((item) => item.text).join(" ");
-    const response = await fetch("/api/summarize", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ transcript: transcriptText }),
-    });
+    setSummaryError("");
+    try {
+      const transcriptText = transcript.map((item) => item.text).join(" ");
+      const response = await fetch("/api/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transcript: transcriptText }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.error || t("summary.error"));
+      if (!response.ok) {
+        throw new Error(data.error || t("summary.error"));
+      }
+
+      setSummary(data.summary);
+    } catch (err) {
+      setSummaryError(err instanceof Error ? err.message : t("summary.error"));
     }
-
-    setSummary(data.summary);
   };
 
   const handleTranslate = async () => {
-    const transcriptText = transcript.map((item) => item.text).join(" ");
-    const response = await fetch("/api/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: transcriptText, targetLang }),
-    });
+    setTranslationError("");
+    try {
+      const transcriptText = transcript.map((item) => item.text).join(" ");
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: transcriptText, targetLang }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.error || t("translation.error"));
+      if (!response.ok) {
+        throw new Error(data.error || t("translation.error"));
+      }
+
+      setTranslation(data.translation);
+    } catch (err) {
+      setTranslationError(err instanceof Error ? err.message : t("translation.error"));
     }
-
-    setTranslation(data.translation);
   };
 
   const handleCopy = async (id: string, text: string) => {
@@ -145,7 +158,7 @@ export default function HomePage() {
   const transcriptText = transcript.map((item) => item.text).join(" ");
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-in">
       <div className="space-y-2">
         <h1 className="text-4xl font-semibold tracking-tight">{t("header.title")}</h1>
         <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-lg">
@@ -153,7 +166,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-3 animate-in delay-100">
         <div className="flex gap-2">
           <Input
             type="url"
@@ -181,6 +194,8 @@ export default function HomePage() {
         )}
       </form>
 
+      {!loading && transcript.length === 0 && !error && <EmptyState onFillExample={setUrl} />}
+
       {loading && (
         <Card>
           <CardContent className="pt-6">
@@ -196,50 +211,52 @@ export default function HomePage() {
       )}
 
       {transcript.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">
-                {t("transcript.title")}{" "}
-                <span className="text-neutral-500">({transcript.length})</span>
-              </CardTitle>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleCopy("transcript", transcriptText)}
-                >
-                  {copiedId === "transcript" ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleExportTxt}>
-                  TXT
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleExportSrt}>
-                  SRT
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 max-h-[500px] overflow-y-auto">
-              {transcript.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex gap-3 p-2 rounded hover:bg-muted/50 transition-colors"
-                >
-                  <span className="text-xs text-muted-foreground font-mono shrink-0">
-                    {formatTimestamp(item.offset)}
-                  </span>
-                  <span className="text-sm">{item.text}</span>
+        <div className="space-y-4 animate-in delay-200">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">
+                  {t("transcript.title")}{" "}
+                  <span className="text-neutral-500">({transcript.length})</span>
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCopy("transcript", transcriptText)}
+                  >
+                    {copiedId === "transcript" ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleExportTxt}>
+                    TXT
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleExportSrt}>
+                    SRT
+                  </Button>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-[500px] overflow-y-auto">
+                {transcript.map((item, index) => (
+                  <div
+                    key={index}
+                    className="flex gap-2 sm:gap-3 p-2 sm:p-3 rounded hover:bg-muted/50 transition-colors"
+                  >
+                    <span className="text-xs text-muted-foreground font-mono shrink-0">
+                      {formatTimestamp(item.offset)}
+                    </span>
+                    <span className="text-sm">{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
       {transcript.length > 0 && (
@@ -250,10 +267,16 @@ export default function HomePage() {
             </CardHeader>
             <CardContent className="space-y-3">
               {!summary ? (
-                <Button onClick={handleGenerateSummary} className="w-full">
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  {t("summary.button")}
-                </Button>
+                <>
+                  <Button onClick={handleGenerateSummary} className="w-full">
+                    {t("summary.button")}
+                  </Button>
+                  {summaryError && (
+                    <p className="text-red-500 text-sm" role="alert">
+                      {summaryError}
+                    </p>
+                  )}
+                </>
               ) : (
                 <>
                   <Textarea
@@ -300,10 +323,16 @@ export default function HomePage() {
                 </SelectContent>
               </Select>
               {!translation ? (
-                <Button onClick={handleTranslate} className="w-full">
-                  <Languages className="h-4 w-4 mr-2" />
-                  {t("translation.button")}
-                </Button>
+                <>
+                  <Button onClick={handleTranslate} className="w-full">
+                    {t("translation.button")}
+                  </Button>
+                  {translationError && (
+                    <p className="text-red-500 text-sm" role="alert">
+                      {translationError}
+                    </p>
+                  )}
+                </>
               ) : (
                 <>
                   <Textarea
