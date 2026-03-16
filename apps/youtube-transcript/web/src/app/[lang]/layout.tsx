@@ -46,33 +46,47 @@ export default async function LocaleLayout({
       <body>
         <NextIntlClientProvider messages={messages}>
           <div className="min-h-screen bg-background">
-            <header className="border-b">
+            <header className="border-b border-neutral-200 dark:border-neutral-800">
               <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-                <h1 className="text-xl font-semibold">
-                  📺 <span className="hidden sm:inline">YouTube Transcript Tool</span>
-                </h1>
-                <div className="flex gap-2">
+                <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                  <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+                    <span className="text-primary-foreground font-semibold text-sm">YT</span>
+                  </div>
+                  <span className="font-semibold">Transcript</span>
+                </Link>
+                <nav className="flex gap-1" aria-label="Language selector">
                   <Link
                     href="/"
                     locale="en"
-                    className={`px-3 py-1 rounded text-sm ${locale === "en" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                    className={`px-3 py-2 text-sm transition-colors relative ${
+                      locale === "en" ? "text-foreground font-medium" : "text-neutral-500 hover:text-foreground"
+                    }`}
+                    aria-label="Switch to English"
+                    aria-current={locale === "en" ? "true" : undefined}
                   >
                     EN
+                    {locale === "en" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
                   </Link>
                   <Link
                     href="/"
                     locale="zh"
-                    className={`px-3 py-1 rounded text-sm ${locale === "zh" ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                    className={`px-3 py-2 text-sm transition-colors relative ${
+                      locale === "zh" ? "text-foreground font-medium" : "text-neutral-500 hover:text-foreground"
+                    }`}
+                    aria-label="切换到中文"
+                    aria-current={locale === "zh" ? "true" : undefined}
                   >
                     中
+                    {locale === "zh" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />}
                   </Link>
-                </div>
+                </nav>
               </div>
             </header>
             <main className="container mx-auto px-4 py-8">{children}</main>
-            <footer className="border-t mt-12">
-              <div className="container mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-                <p>100% Free • No Registration Required</p>
+            <footer className="border-t border-neutral-200 dark:border-neutral-800 mt-16">
+              <div className="container mx-auto px-4 py-6 flex items-center justify-between text-sm text-neutral-500">
+                <p>Free • No registration</p>
+                <p>Built with Next.js & Rust</p>
               </div>
             </footer>
           </div>
