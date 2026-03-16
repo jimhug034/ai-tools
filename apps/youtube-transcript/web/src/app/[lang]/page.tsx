@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Copy, Check, Loader2 } from "lucide-react";
+import { Copy, Check, Loader2, Download, FileText } from "lucide-react";
 import { Button } from "@ai-tools/ui";
 import { Input } from "@ai-tools/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@ai-tools/ui";
@@ -31,6 +31,8 @@ export default function HomePage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [summaryError, setSummaryError] = useState("");
   const [translationError, setTranslationError] = useState("");
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +77,7 @@ export default function HomePage() {
 
   const handleGenerateSummary = async () => {
     setSummaryError("");
+    setIsSummarizing(true);
     try {
       const transcriptText = transcript.map((item) => item.text).join(" ");
       const response = await fetch("/api/summarize", {
@@ -92,11 +95,14 @@ export default function HomePage() {
       setSummary(data.summary);
     } catch (err) {
       setSummaryError(err instanceof Error ? err.message : t("summary.error"));
+    } finally {
+      setIsSummarizing(false);
     }
   };
 
   const handleTranslate = async () => {
     setTranslationError("");
+    setIsTranslating(true);
     try {
       const transcriptText = transcript.map((item) => item.text).join(" ");
       const response = await fetch("/api/translate", {
@@ -114,6 +120,8 @@ export default function HomePage() {
       setTranslation(data.translation);
     } catch (err) {
       setTranslationError(err instanceof Error ? err.message : t("translation.error"));
+    } finally {
+      setIsTranslating(false);
     }
   };
 
@@ -211,14 +219,29 @@ export default function HomePage() {
       {!loading && transcript.length === 0 && !error && <EmptyState onFillExample={setUrl} />}
 
       {loading && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-3">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
-              <Skeleton className="h-4 w-4/6" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-4 border-b border-neutral-100 dark:border-neutral-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5 rounded" />
+                <Skeleton className="h-5 w-32 rounded" />
+                <Skeleton className="h-5 w-8 rounded-full" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-8 w-8 rounded" />
+                <Skeleton className="h-8 w-16 rounded" />
+                <Skeleton className="h-8 w-16 rounded" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="divide-y divide-neutral-100 dark:divide-neutral-800/50">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="flex gap-3 px-5 py-3">
+                  <Skeleton className="h-4 w-16 shrink-0" />
+                  <Skeleton className="h-4 flex-1" />
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -226,45 +249,57 @@ export default function HomePage() {
 
       {transcript.length > 0 && (
         <div className="space-y-4 animate-in delay-200">
-          <Card>
-            <CardHeader className="pb-3">
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-4 border-b border-neutral-100 dark:border-neutral-800">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">
-                  {t("transcript.title")}{" "}
-                  <span className="text-neutral-500">({transcript.length})</span>
-                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">{t("transcript.title")}</CardTitle>
+                  <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
+                    {transcript.length}
+                  </span>
+                </div>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleCopy("transcript", transcriptText)}
+                    className={
+                      copiedId === "transcript"
+                        ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+                        : ""
+                    }
                   >
                     {copiedId === "transcript" ? (
-                      <Check className="h-4 w-4 text-green-500" />
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                     ) : (
                       <Copy className="h-4 w-4" />
                     )}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleExportTxt}>
-                    TXT
+                  <Button variant="outline" size="sm" onClick={handleExportTxt} className="gap-1.5">
+                    <Download className="h-3.5 w-3.5" />
+                    <span>TXT</span>
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleExportSrt}>
-                    SRT
+                  <Button variant="outline" size="sm" onClick={handleExportSrt} className="gap-1.5">
+                    <Download className="h-3.5 w-3.5" />
+                    <span>SRT</span>
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2 max-h-[500px] overflow-y-auto">
+            <CardContent className="p-0">
+              <div className="max-h-[500px] overflow-y-auto custom-scrollbar">
                 {transcript.map((item, index) => (
                   <div
                     key={index}
-                    className="flex gap-2 sm:gap-3 p-2 sm:p-3 rounded hover:bg-muted/50 transition-colors"
+                    className="flex gap-3 px-5 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-900/50 transition-colors border-b border-neutral-100 dark:border-neutral-800/50 last:border-0 group"
                   >
-                    <span className="text-xs text-muted-foreground font-mono shrink-0">
+                    <span className="text-xs text-neutral-400 dark:text-neutral-500 font-mono shrink-0 tabular-nums">
                       {formatTimestamp(item.offset)}
                     </span>
-                    <span className="text-sm">{item.text}</span>
+                    <span className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                      {item.text}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -274,19 +309,35 @@ export default function HomePage() {
       )}
 
       {transcript.length > 0 && (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">{t("summary.title")}</CardTitle>
+        <div className="grid md:grid-cols-2 gap-4">
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-4 border-b border-neutral-100 dark:border-neutral-800">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center">
+                  <span className="text-lg">✨</span>
+                </div>
+                {t("summary.title")}
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4 pt-4">
               {!summary ? (
                 <>
-                  <Button onClick={handleGenerateSummary} className="w-full">
-                    {t("summary.button")}
+                  <Button
+                    onClick={handleGenerateSummary}
+                    disabled={isSummarizing}
+                    className="w-full"
+                  >
+                    {isSummarizing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      t("summary.button")
+                    )}
                   </Button>
                   {summaryError && (
-                    <p className="text-red-500 text-sm" role="alert">
+                    <p className="text-red-500 text-sm text-center" role="alert">
                       {summaryError}
                     </p>
                   )}
@@ -296,19 +347,38 @@ export default function HomePage() {
                   <Textarea
                     value={summary}
                     onChange={(e) => setSummary(e.target.value)}
-                    rows={6}
+                    rows={8}
                     className="resize-none"
                   />
-                  <div className="flex justify-end">
+                  <div className="flex justify-between items-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSummary("")}
+                      className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+                    >
+                      Clear
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleCopy("summary", summary)}
+                      className={
+                        copiedId === "summary"
+                          ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+                          : ""
+                      }
                     >
                       {copiedId === "summary" ? (
-                        <Check className="h-4 w-4 text-green-500" />
+                        <>
+                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <span>Copied</span>
+                        </>
                       ) : (
-                        <Copy className="h-4 w-4" />
+                        <>
+                          <Copy className="h-4 w-4" />
+                          <span>Copy</span>
+                        </>
                       )}
                     </Button>
                   </div>
@@ -317,13 +387,18 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">{t("translation.title")}</CardTitle>
+          <Card className="overflow-hidden">
+            <CardHeader className="pb-4 border-b border-neutral-100 dark:border-neutral-800">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-sky-500/10 flex items-center justify-center">
+                  <span className="text-lg">🌐</span>
+                </div>
+                {t("translation.title")}
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-4 pt-4">
               <Select value={targetLang} onValueChange={(value) => setTargetLang(value as string)}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder={t("translation.selectLanguage")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -338,11 +413,18 @@ export default function HomePage() {
               </Select>
               {!translation ? (
                 <>
-                  <Button onClick={handleTranslate} className="w-full">
-                    {t("translation.button")}
+                  <Button onClick={handleTranslate} disabled={isTranslating} className="w-full">
+                    {isTranslating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Translating...
+                      </>
+                    ) : (
+                      t("translation.button")
+                    )}
                   </Button>
                   {translationError && (
-                    <p className="text-red-500 text-sm" role="alert">
+                    <p className="text-red-500 text-sm text-center" role="alert">
                       {translationError}
                     </p>
                   )}
@@ -355,16 +437,35 @@ export default function HomePage() {
                     rows={6}
                     className="resize-none"
                   />
-                  <div className="flex justify-end">
+                  <div className="flex justify-between items-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setTranslation("")}
+                      className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+                    >
+                      Clear
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleCopy("translation", translation)}
+                      className={
+                        copiedId === "translation"
+                          ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
+                          : ""
+                      }
                     >
                       {copiedId === "translation" ? (
-                        <Check className="h-4 w-4 text-green-500" />
+                        <>
+                          <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <span>Copied</span>
+                        </>
                       ) : (
-                        <Copy className="h-4 w-4" />
+                        <>
+                          <Copy className="h-4 w-4" />
+                          <span>Copy</span>
+                        </>
                       )}
                     </Button>
                   </div>
