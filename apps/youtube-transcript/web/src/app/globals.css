@@ -56,6 +56,18 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-family: var(--font-inter);
+  }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-inter-tight);
+  }
+  .font-mono {
+    font-family: var(--font-jetbrains-mono);
   }
 }
