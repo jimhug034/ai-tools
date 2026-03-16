@@ -8,6 +8,7 @@ import { Input } from "@ai-tools/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@ai-tools/ui";
 import { Textarea } from "@ai-tools/ui";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@ai-tools/ui";
+import { Skeleton } from "@ai-tools/ui";
 import { extractVideoId, formatTimestamp, formatSrtTime } from "@ai-tools/utils";
 
 export interface TranscriptItem {
@@ -180,15 +181,34 @@ export default function HomePage() {
         )}
       </form>
 
+      {loading && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-3">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="h-4 w-4/6" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {transcript.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">
-                {t("transcript.title")} <span className="text-neutral-500">({transcript.length})</span>
+                {t("transcript.title")}{" "}
+                <span className="text-neutral-500">({transcript.length})</span>
               </CardTitle>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleCopy("transcript", transcriptText)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleCopy("transcript", transcriptText)}
+                >
                   {copiedId === "transcript" ? (
                     <Check className="h-4 w-4 text-green-500" />
                   ) : (
@@ -243,7 +263,11 @@ export default function HomePage() {
                     className="resize-none"
                   />
                   <div className="flex justify-end">
-                    <Button variant="outline" size="sm" onClick={() => handleCopy("summary", summary)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopy("summary", summary)}
+                    >
                       {copiedId === "summary" ? (
                         <Check className="h-4 w-4 text-green-500" />
                       ) : (
@@ -289,7 +313,11 @@ export default function HomePage() {
                     className="resize-none"
                   />
                   <div className="flex justify-end">
-                    <Button variant="outline" size="sm" onClick={() => handleCopy("translation", translation)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopy("translation", translation)}
+                    >
                       {copiedId === "translation" ? (
                         <Check className="h-4 w-4 text-green-500" />
                       ) : (

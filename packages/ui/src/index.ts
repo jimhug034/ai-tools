@@ -26,3 +26,5 @@ export {
   SelectTrigger,
   SelectValue,
 } from "./components/select";
+
+export { Skeleton } from "./components/skeleton";
