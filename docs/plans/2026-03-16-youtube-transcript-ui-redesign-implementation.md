@@ -5,6 +5,7 @@
 **Goal:** Redesign the YouTube Transcript web interface with a minimal, efficient aesthetic inspired by Linear/Vercel, using a blue/violet color scheme.
 
 **Architecture:**
+
 - Update design tokens (colors, typography, spacing) in globals.css and tailwind.config
 - Refactor layout components (hero, input, cards) in page.tsx and layout.tsx
 - Add new components (skeleton, empty-state) for enhanced UX
@@ -17,6 +18,7 @@
 ## Task 1: Update Design Tokens (Color System)
 
 **Files:**
+
 - Modify: `apps/youtube-transcript/web/src/app/globals.css:5-50`
 
 **Step 1: Update CSS variables with new color palette**
@@ -28,30 +30,30 @@ Replace the current color system with blue/violet theme:
   :root {
     /* Primary - Sky Blue */
     --background: 0 0% 100%;
-    --foreground: 0 0% 4%;  /* #0A0A0A */
+    --foreground: 0 0% 4%; /* #0A0A0A */
     --card: 0 0% 100%;
     --card-foreground: 0 0% 4%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 4%;
-    --primary: 199 89% 48%;  /* #0EA5E9 Sky 500 */
+    --primary: 199 89% 48%; /* #0EA5E9 Sky 500 */
     --primary-foreground: 0 0% 100%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 0 0% 4%;
     --muted: 210 40% 96%;
-    --muted-foreground: 0 0% 45%;  /* Neutral 500 */
-    --accent: 258 90% 66%;  /* #8B5CF6 Violet 500 */
+    --muted-foreground: 0 0% 45%; /* Neutral 500 */
+    --accent: 258 90% 66%; /* #8B5CF6 Violet 500 */
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 90%;  /* #E5E5E5 */
+    --border: 0 0% 90%; /* #E5E5E5 */
     --input: 0 0% 90%;
     --ring: 199 89% 48%;
-    --radius: 0.375rem;  /* 6px - sharper than 8px */
+    --radius: 0.375rem; /* 6px - sharper than 8px */
   }
 
   .dark {
-    --background: 0 0% 4%;  /* #0A0A0A */
-    --foreground: 0 0% 90%;  /* #E5E5E5 */
+    --background: 0 0% 4%; /* #0A0A0A */
+    --foreground: 0 0% 90%; /* #E5E5E5 */
     --card: 0 0% 6%;
     --card-foreground: 0 0% 90%;
     --popover: 0 0% 6%;
@@ -66,7 +68,7 @@ Replace the current color system with blue/violet theme:
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 15%;  /* #262626 */
+    --border: 0 0% 15%; /* #262626 */
     --input: 0 0% 15%;
     --ring: 199 89% 48%;
   }
@@ -104,6 +106,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ## Task 2: Update Typography
 
 **Files:**
+
 - Create: `apps/youtube-transcript/web/src/app/layout.tsx` (update metadata)
 - Modify: `apps/youtube-transcript/web/src/app/globals.css:52-59`
 
@@ -152,7 +155,12 @@ Replace the html element in layout:
     @apply bg-background text-foreground font-sans;
     font-family: var(--font-inter);
   }
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-inter-tight);
   }
   .font-mono {
@@ -179,6 +187,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ## Task 3: Refactor Hero Section
 
 **Files:**
+
 - Modify: `apps/youtube-transcript/web/src/app/[lang]/page.tsx:147-151`
 
 **Step 1: Update hero section JSX**
@@ -187,12 +196,8 @@ Replace current hero with:
 
 ```tsx
 <div className="space-y-2">
-  <h1 className="text-4xl font-semibold tracking-tight">
-    {t("header.title")}
-  </h1>
-  <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-lg">
-    {t("meta.description")}
-  </p>
+  <h1 className="text-4xl font-semibold tracking-tight">{t("header.title")}</h1>
+  <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-lg">{t("meta.description")}</p>
 </div>
 ```
 
@@ -230,6 +235,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ## Task 4: Refactor Input Section
 
 **Files:**
+
 - Modify: `apps/youtube-transcript/web/src/app/[lang]/page.tsx:153-187`
 
 **Step 1: Remove icon from input, update layout**
@@ -252,16 +258,14 @@ Replace form content:
       className="flex-1"
     />
     <Button type="submit" disabled={loading || !url}>
-      {loading ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      ) : (
-        t("input.button")
-      )}
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("input.button")}
     </Button>
   </div>
   {error && (
     <div className="space-y-1">
-      <p className="text-red-500 text-sm" role="alert">{error}</p>
+      <p className="text-red-500 text-sm" role="alert">
+        {error}
+      </p>
       {errorHint && <p className="text-neutral-500 text-xs">{errorHint}</p>}
     </div>
   )}
@@ -291,6 +295,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ## Task 5: Refactor Card Layout
 
 **Files:**
+
 - Modify: `apps/youtube-transcript/web/src/app/[lang]/page.tsx:189-305`
 
 **Step 1: Update transcript card - remove icon**
@@ -304,11 +309,7 @@ Replace CardHeader for transcript (lines 191-211):
       {t("transcript.title")} <span className="text-neutral-500">({transcript.length})</span>
     </CardTitle>
     <div className="flex gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => handleCopy("transcript", transcriptText)}
-      >
+      <Button variant="outline" size="sm" onClick={() => handleCopy("transcript", transcriptText)}>
         <Copy className="h-4 w-4" />
       </Button>
       <Button variant="outline" size="sm" onClick={handleExportTxt}>
@@ -347,11 +348,7 @@ Replace the grid section (lines 231-305):
             className="resize-none"
           />
           <div className="flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleCopy("summary", summary)}
-            >
+            <Button variant="outline" size="sm" onClick={() => handleCopy("summary", summary)}>
               <Copy className="h-4 w-4" />
             </Button>
           </div>
@@ -435,11 +432,13 @@ Add logic to show check icon when copied. In each Button that copies:
 Or use conditional rendering:
 
 ```tsx
-{copiedId === "transcript" ? (
-  <Check className="h-4 w-4 text-green-500" />
-) : (
-  <Copy className="h-4 w-4" />
-)}
+{
+  copiedId === "transcript" ? (
+    <Check className="h-4 w-4 text-green-500" />
+  ) : (
+    <Copy className="h-4 w-4" />
+  );
+}
 ```
 
 Add `Check` to lucide-react import.
@@ -464,6 +463,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ## Task 6: Update Header/Logo
 
 **Files:**
+
 - Modify: `apps/youtube-transcript/web/src/app/[lang]/layout.tsx:22-60`
 
 **Step 1: Remove emoji, update header**
@@ -484,9 +484,7 @@ Replace header content:
         href="/"
         locale="en"
         className={`px-3 py-2 text-sm transition-colors relative ${
-          locale === "en"
-            ? "text-foreground font-medium"
-            : "text-neutral-500 hover:text-foreground"
+          locale === "en" ? "text-foreground font-medium" : "text-neutral-500 hover:text-foreground"
         }`}
         aria-label="Switch to English"
         aria-current={locale === "en" ? "true" : undefined}
@@ -498,9 +496,7 @@ Replace header content:
         href="/"
         locale="zh"
         className={`px-3 py-2 text-sm transition-colors relative ${
-          locale === "zh"
-            ? "text-foreground font-medium"
-            : "text-neutral-500 hover:text-foreground"
+          locale === "zh" ? "text-foreground font-medium" : "text-neutral-500 hover:text-foreground"
         }`}
         aria-label="切换到中文"
         aria-current={locale === "zh" ? "true" : undefined}
@@ -546,6 +542,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ## Task 7: Add Skeleton Loading Component
 
 **Files:**
+
 - Create: `packages/ui/src/components/skeleton.tsx`
 - Modify: `apps/youtube-transcript/web/src/app/[lang]/page.tsx`
 
@@ -554,10 +551,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ```tsx
 import { cn } from "../lib/utils";
 
-const Skeleton = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+const Skeleton = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn("animate-pulse rounded-md bg-neutral-100 dark:bg-neutral-800", className)}
     {...props}
@@ -582,19 +576,21 @@ export { Skeleton } from "./skeleton";
 Add after the form in page.tsx:
 
 ```tsx
-{loading && (
-  <Card>
-    <CardContent className="pt-6">
-      <div className="space-y-3">
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-5/6" />
-        <Skeleton className="h-4 w-4/6" />
-        <Skeleton className="h-4 w-full" />
-        <Skeleton className="h-4 w-3/4" />
-      </div>
-    </CardContent>
-  </Card>
-)}
+{
+  loading && (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="space-y-3">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-4/6" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 ```
 
 **Step 4: Commit**
@@ -615,6 +611,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ## Task 8: Add Empty State Component
 
 **Files:**
+
 - Create: `apps/youtube-transcript/web/src/components/empty-state.tsx`
 - Modify: `apps/youtube-transcript/web/src/app/[lang]/page.tsx`
 
@@ -655,9 +652,9 @@ export function EmptyState({ onFillExample }: EmptyStateProps) {
 Add in page.tsx after the form, before transcript card:
 
 ```tsx
-{!loading && transcript.length === 0 && !error && (
-  <EmptyState onFillExample={setUrl} />
-)}
+{
+  !loading && transcript.length === 0 && !error && <EmptyState onFillExample={setUrl} />;
+}
 ```
 
 **Step 3: Commit**
@@ -678,6 +675,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ## Task 9: Add Transition Animations
 
 **Files:**
+
 - Modify: `apps/youtube-transcript/web/src/app/globals.css`
 - Modify: `apps/youtube-transcript/web/src/app/[lang]/page.tsx`
 
@@ -716,19 +714,11 @@ Add `animate-in` class to main containers:
 
 ```tsx
 <div className="space-y-8 animate-in">
-  <div className="space-y-2">
-    {/* hero */}
-  </div>
+  <div className="space-y-2">{/* hero */}</div>
 
-  <form className="animate-in delay-100">
-    {/* form */}
-  </form>
+  <form className="animate-in delay-100">{/* form */}</form>
 
-  {transcript.length > 0 && (
-    <div className="space-y-4 animate-in delay-200">
-      {/* cards */}
-    </div>
-  )}
+  {transcript.length > 0 && <div className="space-y-4 animate-in delay-200">{/* cards */}</div>}
 </div>
 ```
 
@@ -750,6 +740,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ## Task 10: Add Error Handling for Summary/Translation
 
 **Files:**
+
 - Modify: `apps/youtube-transcript/web/src/app/[lang]/page.tsx:72-104`
 
 **Step 1: Add error state and handling**
@@ -818,9 +809,13 @@ const handleTranslate = async () => {
 Add error display in summary and translation cards:
 
 ```tsx
-{summaryError && (
-  <p className="text-red-500 text-sm" role="alert">{summaryError}</p>
-)}
+{
+  summaryError && (
+    <p className="text-red-500 text-sm" role="alert">
+      {summaryError}
+    </p>
+  );
+}
 ```
 
 **Step 5: Commit**
@@ -841,6 +836,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ## Task 11: Mobile Responsiveness Improvements
 
 **Files:**
+
 - Modify: `apps/youtube-transcript/web/src/app/[lang]/page.tsx`
 - Modify: `packages/ui/src/components/button.tsx`
 
@@ -888,6 +884,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ## Task 12: Final Polish - Remove Decorative Icons
 
 **Files:**
+
 - Modify: `apps/youtube-transcript/web/src/app/[lang]/page.tsx`
 
 **Step 1: Remove icons from summary and translation button**
@@ -991,6 +988,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>"
 ## Summary
 
 This plan covers:
+
 1. ✅ Design tokens (colors, typography, spacing)
 2. ✅ Layout restructuring (hero, input, cards)
 3. ✅ Interaction enhancements (skeleton, copy feedback, animations)

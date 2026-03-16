@@ -20,34 +20,20 @@
 
 ```css
 /* Primary - Blue Sky */
---primary: #0EA5E9 (Sky 500)
---primary-hover: #0284C7 (Sky 600)
-
-/* Accent - Violet */
---accent: #8B5CF6 (Violet 500)
---accent-hover: #7C3AED (Violet 600)
-
-/* Background */
---bg-light: #FFFFFF
---bg-dark: #0A0A0A
-
-/* Text */
---text-primary: #0A0A0A
---text-secondary: #737373 (Neutral 500)
---text-light: #E5E5E5
-
-/* Border */
---border-light: #E5E5E5
---border-dark: #262626
+--primary: #0ea5e9 (Sky 500) --primary-hover: #0284c7 (Sky 600) /* Accent - Violet */
+  --accent: #8b5cf6 (Violet 500) --accent-hover: #7c3aed (Violet 600) /* Background */
+  --bg-light: #ffffff --bg-dark: #0a0a0a /* Text */ --text-primary: #0a0a0a
+  --text-secondary: #737373 (Neutral 500) --text-light: #e5e5e5 /* Border */ --border-light: #e5e5e5
+  --border-dark: #262626;
 ```
 
 ### Typography
 
-| Usage | Font | Characteristics |
-|-------|------|-----------------|
-| Headings | Inter Tight | Tighter tracking, more modern |
-| Body | Inter | Readable, neutral |
-| Code/Time | JetBrains Mono | Monospace, technical |
+| Usage     | Font           | Characteristics               |
+| --------- | -------------- | ----------------------------- |
+| Headings  | Inter Tight    | Tighter tracking, more modern |
+| Body      | Inter          | Readable, neutral             |
+| Code/Time | JetBrains Mono | Monospace, technical          |
 
 ### Spacing & Radius
 
@@ -66,11 +52,13 @@ Remove decorative shadows. Use only depth-essential subtle shadows.
 ### Hero Section
 
 **Current Issues**:
+
 - Centered alignment feels template-y
 - Emoji decoration unprofessional
 - Generic spacing
 
 **Changes**:
+
 - Left-align everything
 - Large, tight-spacing heading
 - Single-line description in gray
@@ -97,6 +85,7 @@ Remove decorative shadows. Use only depth-essential subtle shadows.
 ### Input Area
 
 **Changes**:
+
 - Full-width (remove max-width constraint)
 - Remove decorative icon inside input
 - Cleaner placeholder text
@@ -105,11 +94,13 @@ Remove decorative shadows. Use only depth-essential subtle shadows.
 ### Card System
 
 **Current Issues**:
+
 - Equal-sized grid feels generic
 - Icons before every heading
 - Too much padding
 
 **Changes**:
+
 - Transcript card: full width
 - Summary/Translation: stacked vertically
 - Remove all heading icons
@@ -137,6 +128,7 @@ Remove decorative shadows. Use only depth-essential subtle shadows.
 **Current Problem**: Single `copied` state conflicts across buttons
 
 **Solution**:
+
 ```tsx
 const [copiedId, setCopiedId] = useState<string | null>(null)
 
@@ -151,12 +143,12 @@ const [copiedId, setCopiedId] = useState<string | null>(null)
 
 ### Transitions
 
-| Element | Transition | Duration |
-|---------|-----------|----------|
-| Page enter | Fade + Slide up | 300ms |
-| Card expand | Height | 200ms |
-| Button hover | Background | 100ms |
-| Input focus | Border + Ring | 150ms |
+| Element      | Transition      | Duration |
+| ------------ | --------------- | -------- |
+| Page enter   | Fade + Slide up | 300ms    |
+| Card expand  | Height          | 200ms    |
+| Button hover | Background      | 100ms    |
+| Input focus  | Border + Ring   | 150ms    |
 
 Stagger children animations by 50ms for polished feel.
 
@@ -199,13 +191,13 @@ Before user enters URL, show:
 
 ## Component Changes
 
-| Component | Current | After |
-|-----------|---------|-------|
-| Logo | 📺 + text | SVG icon or text only |
-| Lang Switch | Rounded pills | Underline links |
-| Transcript List | Flex items | Table layout |
-| Copy Button | Text change | Icon swap + tooltip |
-| Icons | Every heading | Removed |
+| Component       | Current       | After                 |
+| --------------- | ------------- | --------------------- |
+| Logo            | 📺 + text     | SVG icon or text only |
+| Lang Switch     | Rounded pills | Underline links       |
+| Transcript List | Flex items    | Table layout          |
+| Copy Button     | Text change   | Icon swap + tooltip   |
+| Icons           | Every heading | Removed               |
 
 ---
 
